@@ -1,0 +1,513 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neon Admin Panel">
+    <meta name="author" content="">
+    <title>首页</title>
+    <link rel="icon" href="/static/picture/mapview.png" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/jquery-ui-1.10.3.custom.min.css">
+    <link rel="stylesheet" href="/static/css/entypo.css">
+    <link rel="stylesheet" href="/static/css/css.css">
+    <link rel="stylesheet" href="/static/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/css/neon-core.css">
+    <link rel="stylesheet" href="/static/css/neon-theme.css">
+    <link rel="stylesheet" href="/static/css/neon-forms.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+    <script src="/static/js/jquery-1.11.0.min.js"></script>
+</head>
+<style>
+    body1 {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+    }
+
+    .carousel-container {
+        position: relative;
+        width: 100%;
+        max-width: 1200px;
+        overflow: hidden;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .carousel-slide {
+        display: flex;
+        transition: transform 0.5s ease-in-out;
+    }
+
+    .carousel-slide img {
+        width: 100%;
+        height: auto;
+    }
+
+    button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+        border-radius: 50%;
+        user-select: none;
+    }
+
+    button:focus {
+        outline: none;
+    }
+
+    .prev {
+        left: 10px;
+    }
+
+    .next {
+        right: 10px;
+    }
+</style>
+<body class="page-body  page-left-in" data-url="http://neon.dev">
+<div class="page-container">
+    <div class="sidebar-menu">
+        <header class="logo-env">
+
+            <div class="logo" style="text-align:center">
+                <a href="/app/index/">
+                    <h3 style="color: #fff;font-weight: bold;margin-top: 5px;">广州市租房数据分析</h3>
+
+                </a>
+            </div>
+
+
+        </header>
+        <div class="sidebar-user-info">
+            <div class="sui-normal">
+                <a href="#" class="user-link">
+                    <img style="width:95%" src=/media/{{ request.session.username.avatar | safe }} class="img-circle">
+
+                    <span style="text-align:center;padding-top:209px">欢迎回来</span>
+                    <strong style="text-align:center;margin-top:5px">{{ username }}</strong>
+                </a>
+            </div>
+
+        </div>
+
+
+        <ul id="main-menu" class="">
+            <li class="opened active">
+                <a href="/app/index/">
+                    <i class="entypo-gauge"></i>
+                    <span>首页</span>
+                </a>
+            </li>
+
+
+            <li>
+                <a href="/app/selfInfo/">
+                    <i class="entypo-user"></i>
+                    <span>个人中心</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="entypo-layout"></i>
+                    <span>数据统计</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/app/tableData">
+                            <i class="icon-tasks"></i>
+                            <span>数据总览</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/historyTableData/">
+                            <i class="icon-star"></i>
+                            <span>房源收藏</span>
+                        </a>
+                    </li>
+
+                </ul>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="entypo-chart-bar"></i>
+                    <span>可视化图表</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/app/houseDistribute/">
+                            <i class="entypo-light-down"></i>
+                            <span>房源分布</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/typeincity/">
+                            <i class="entypo-feather"></i>
+                            <span>户型占比</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/housewordcloud">
+                            <i class="entypo-lamp"></i>
+                            <span>词云汇总</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/housetyperank/">
+                            <i class="entypo-graduation-cap"></i>
+                            <span>类型级别</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/servicemoney/">
+                            <i class="entypo-network"></i>
+                            <span>价钱影响</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/heatmap-analysis/">
+                            <i class="entypo-chart-pie"></i>
+                            <span>热力图分析</span>
+                        </a>
+                    </li>
+
+                </ul>
+            </li>
+            <li>
+                <a href="/app/predict-all-prices/">
+                    <i class="icon-bar-chart"></i>
+                    <span>房价预测</span>
+                </a>
+            </li>
+        </ul>
+
+    </div>
+    <div class="main-content">
+
+        <div class="row">
+            <!-- Raw Links -->
+            <div style="display:flex;" class="col-md-12 hidden-xs">
+
+                <ul style="margin-left:auto" class="list-inline links-list pull-right">
+
+                    <li class="sep"></li>
+
+                    <li>
+                        <a href="/app/logOut">
+                            退出登录 <i class="entypo-logout right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <hr style="margin-top:0">
+
+        <div class="row">
+
+            <div class="col-sm-9">
+
+                <div class="row">
+
+                    <div class="col-sm-6">
+
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <div class="panel-title">用户创建时间饼状图</div>
+                                <div class="panel-options">
+                                    <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                                    <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div id="main" style="width:80%;height:280px">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <div class="panel-title">最新用户信息</div>
+                                <div class="panel-options">
+                                    <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                                    <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                                </div>
+                            </div>
+                            <table class="table table-bordered table-responsive">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户</th>
+                                    <th>手机号</th>
+                                    <th>创建时间</th>
+                                    <th>用户头像</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for item in newuserlist %}
+                                    <tr>
+                                        <td>{{ item.id }}</td>
+                                        <td>{{ item.username }}</td>
+                                        <td>{{ item.phone }}</td>
+                                        <td>{{ item.time }}</td>
+                                        <td class="text-center">
+                                            <img src="/media/{{ item.avatar }}" alt="" class="img-circle" width="32">
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            <h4>
+                                轮播图
+                            </h4>
+                        </div>
+                    </div>
+                    <div class="carousel-container">
+                        <div class="carousel-slide">
+                            <img src="/static/picture/index.png" alt="Image 1" style="width: 100%">
+                            <img src="/static/picture/index.png" alt="Image 2" style="width: 100%">
+                            <img src="/static/picture/index.png" alt="Image 3" style="width: 100%">
+                        </div>
+                        <button class="prev" onclick="prevSlide()">←</button>
+                        <button class="next" onclick="nextSlide()">→</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="tile-stats tile-green">
+                    <div class="icon"><i class="entypo-chart-bar"></i></div>
+                    <div class="num" data-start="0" data-end="{{ placeslength }}" data-duration="1500"
+                         data-delay="600" style="font-size: 24px">{{ houseslength |  safe }}
+                    </div>
+
+                    <h3>数据总量统计</h3>
+                </div>
+
+                <div class="tile-stats tile-red">
+                    <div class="icon"><i class="entypo-users"></i></div>
+                    <div class="num" data-start="0" data-postfix="" data-duration="1500"
+                         data-delay="0" style="font-size: 24px">{{ userlength | safe }}
+                    </div>
+                    <h3>用户数量统计</h3>
+                </div>
+                <div class="tile-stats tile-aqua">
+                    <div class="icon"><i class="entypo-mail"></i></div>
+                    <div class="num" style="font-size: 24px">{{ averageprice | safe }}元/月
+                    </div>
+                    <h3>均价最高</h3>
+                </div>
+
+                <div class="tile-stats tile-orange">
+                    <div class="icon"><i class="entypo-infinity"></i></div>
+                    <div class="num" data-duration="1500"
+                         data-delay="1200" style="font-size: 24px">{{ str0 | safe }}
+                    </div>
+                    <h3>大众需求</h3>
+                </div>
+
+
+                <div class="tile-stats tile-cyan">
+                    <div class="icon"><i class="entypo-network"></i></div>
+                    <div class="num" style="font-size: 24px">{{ buildingtype|safe }}
+                    </div>
+
+                    <h3>热门布局</h3>
+                </div>
+                <div class="tile-stats tile-brown">
+                    <div class="icon"><i class="entypo-briefcase"></i></div>
+                    <div class="num" data-start="0" data-duration="1800"
+                         data-delay="1200" style="font-size: 24px">{{ area_max|safe }}㎡
+                    </div>
+                    <h3>最大面积</h3>
+                </div>
+                <div class="tile-stats tile-blue">
+                    <div class="icon"><i class="entypo-briefcase"></i></div>
+                    <div class="num" data-start="0" data-duration="1800"
+                         data-delay="1200" style="font-size: 24px">{{ str1 | safe }}
+                    </div>
+                    <h3>热门城市</h3>
+                </div>
+                <div class="tile-stats tile-brown">
+                    <div class="icon"><i class="entypo-briefcase"></i></div>
+                    <div class="num" data-start="0" data-duration="1800"
+                         data-delay="1200" style="font-size: 24px">{{ area_max | safe }}㎡
+                    </div>
+                    <h3>占地面积Top1</h3>
+                </div>
+
+            </div>
+        </div>
+        <footer class="main">
+            Copyright &copy; 2025. Python租房房源数据可视化分析 <a target="_blank"
+                                                                   href="https://hz.lianjia.com/">链家网</a>
+        </footer>
+
+    </div>
+
+
+</div>
+
+<script src="/static/js/main-gsap.js"></script>
+<script src="/static/js/jquery-ui-1.10.3.minimal.min.js"></script>
+<script src="/static/js/bootstrap.js"></script>
+<script src="/static/js/resizeable.js"></script>
+<script src="/static/js/neon-api.js"></script>
+<script src="/static/js/jquery.sparkline.min.js"></script>
+<script src="/static/js/d3.v3.js"></script>
+<script src="/static/js/rickshaw.min.js"></script>
+<script src="/static/js/raphael-min.js"></script>
+<script src="/static/js/morris.min.js"></script>
+<script src="/static/js/toastr.js"></script>
+<script src="/static/js/neon-chat.js"></script>
+<script src="/static/js/neon-custom.js"></script>
+<script src="/static/js/neon-demo.js"></script>
+<link rel="stylesheet" href="/static/css/datatables.responsive.css">
+<script src="/static/js/datatables.responsive.js"></script>
+<script src="/static/js/jquery.dataTables.columnFilter.js"></script>
+<script src="/static/js/jquery.dataTables.min.js"></script>
+<script src="/static/js/TableTools.min.js"></script>
+<script src="/static/js/dataTables.bootstrap.js"></script>
+<script src="/static/js/lodash.min.js"></script>
+</body>
+<script src="/static/js/echarts.js"></script>
+<script type="text/javascript">
+    var responsiveHelper;
+    var breakpointDefinition = {
+        tablet: 1024,
+        phone: 480
+    };
+    var tableContainer;
+
+    jQuery(document).ready(function ($) {
+        tableContainer = $("#table-1");
+
+        tableContainer.dataTable({
+            "sPaginationType": "bootstrap",
+            "aLengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "bStateSave": true,
+
+
+            // Responsive Settings
+            bAutoWidth: false,
+            fnPreDrawCallback: function () {
+                // Initialize the responsive datatables helper once.
+                if (!responsiveHelper) {
+                    responsiveHelper = new ResponsiveDatatablesHelper(tableContainer, breakpointDefinition);
+                }
+            },
+            fnRowCallback: function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                responsiveHelper.createExpandIcon(nRow);
+            },
+            fnDrawCallback: function (oSettings) {
+                responsiveHelper.respond();
+            }
+        });
+
+        $(".dataTables_wrapper select").select2({
+            minimumResultsForSearch: -1
+        });
+    });
+</script>
+<script>
+    var chartDom = document.getElementById('main');
+    var myChart = echarts.init(chartDom);
+    var option;
+    option = {
+        tooltip: {
+            trigger: 'item'
+        },
+        legend: {
+            top: '5%',
+            left: 'center'
+        },
+        series: [
+            {
+                name: '用户创建时间',
+                type: 'pie',
+                radius: ['40%', '70%'],
+                center: ['50%', '60%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 10,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                },
+                label: {
+                    show: false,
+                    position: 'center'
+                },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: '20',
+                        fontWeight: 'bold'
+                    }
+                },
+                labelLine: {
+                    show: false
+                },
+                data: {{ userTime | safe }}
+            }
+        ]
+    };
+    option && myChart.setOption(option);
+
+</script>
+<script src="/static/js/script.js"></script>
+<script>
+    let currentIndex = 0;
+
+    function showSlide(index) {
+        const slides = document.querySelectorAll('.carousel-slide img');
+        if (index >= slides.length) {
+            currentIndex = 0;
+        } else if (index < 0) {
+            currentIndex = slides.length - 1;
+        } else {
+            currentIndex = index;
+        }
+        const offset = -currentIndex * 100 + '%';
+        document.querySelector('.carousel-slide').style.transform = `translateX(${offset})`;
+    }
+
+    function nextSlide() {
+        showSlide(currentIndex + 1);
+    }
+
+    function prevSlide() {
+        showSlide(currentIndex - 1);
+    }
+
+    // 自动播放轮播图（可选）
+    setInterval(nextSlide, 3000); // 每3秒切换一次
+</script>
+<!--
+元数据数据csript代码
+-->
+</html>

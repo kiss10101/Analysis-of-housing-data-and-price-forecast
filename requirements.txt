@@ -1,0 +1,12 @@
+Django>=4.0.0
+pandas>=1.3.0
+numpy>=1.21.0
+matplotlib>=3.5.0
+scikit-learn>=1.0.0
+wordcloud>=1.8.0
+PyMySQL>=1.0.0
+requests>=2.25.0
+lxml>=4.6.0
+Pillow>=8.0.0
+
+

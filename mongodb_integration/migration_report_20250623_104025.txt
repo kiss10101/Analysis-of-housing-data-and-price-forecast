@@ -1,0 +1,5 @@
+数据迁移报告
+迁移时间: 2025-06-23 10:40:25
+总耗时: 0.0 秒
+
+迁移结果: {'users': {'success': False, 'error': "Command createIndexes requires authentication, full error: {'ok': 0.0, 'errmsg': 'Command createIndexes requires authentication', 'code': 13, 'codeName': 'Unauthorized'}"}, 'houses': {'success': False, 'error': "Command createIndexes requires authentication, full error: {'ok': 0.0, 'errmsg': 'Command createIndexes requires authentication', 'code': 13, 'codeName': 'Unauthorized'}"}, 'history': {'success': False, 'error': "Command createIndexes requires authentication, full error: {'ok': 0.0, 'errmsg': 'Command createIndexes requires authentication', 'code': 13, 'codeName': 'Unauthorized'}"}, 'indexes': {'success': False, 'error': "Command createIndexes requires authentication, full error: {'ok': 0.0, 'errmsg': 'Command createIndexes requires authentication', 'code': 13, 'codeName': 'Unauthorized'}"}, 'integrity': {'success': False, 'error': "Command count requires authentication, full error: {'ok': 0.0, 'errmsg': 'Command count requires authentication', 'code': 13, 'codeName': 'Unauthorized'}"}}

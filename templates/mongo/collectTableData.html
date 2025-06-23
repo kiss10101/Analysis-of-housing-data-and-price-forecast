@@ -1,0 +1,280 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neon Admin Panel">
+    <meta name="author" content="">
+    <title>数据收藏 - MongoDB版本</title>
+    <link rel="stylesheet" href="/static/css/jquery-ui-1.10.3.custom.min.css">
+    <link rel="stylesheet" href="/static/css/entypo.css">
+    <link rel="stylesheet" href="/static/css/css.css">
+    <link rel="stylesheet" href="/static/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/css/neon-core.css">
+    <link rel="stylesheet" href="/static/css/neon-theme.css">
+    <link rel="stylesheet" href="/static/css/neon-forms.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <link rel="icon" href="/static/picture/mapview.png" type="image/x-icon">
+    <script src="/static/js/jquery-1.11.0.min.js"></script>
+    <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+    <style>
+        .mongodb-badge {
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body class="page-body" data-url="http://neon.dev">
+
+<div class="page-container">
+    <div class="sidebar-menu">
+        <header class="logo-env">
+            <div class="logo" style="text-align:center">
+                <a href="/mongo/index/">
+                    <h3 style="color: #fff;font-weight: bold;margin-top: 5px;">广州市租房数据分析 <span class="mongodb-badge">MongoDB</span></h3>
+                </a>
+            </div>
+        </header>
+
+        <div class="sidebar-user-info">
+            <div class="sui-normal">
+                <a href="#" class="user-link">
+                    <img style="width:95%" src="/media/{{ userInfo.avatar |default:\'user/avatar/default.png\' }}" alt="" class="img-circle">
+                    <span style="text-align:center;padding-top:209px">欢迎回来</span>
+                    <strong style="text-align:center;margin-top:5px">{{ username }}</strong>
+                </a>
+            </div>
+        </div>
+
+        <ul id="main-menu" class="">
+            <li>
+                <a href="/mongo/index/">
+                    <i class="entypo-gauge"></i>
+                    <span>首页</span>
+                </a>
+            </li>
+            <li>
+                <a href="/mongo/selfInfo/">
+                    <i class="entypo-user"></i>
+                    <span>个人中心</span>
+                </a>
+            </li>
+            <li class="opened active">
+                <a href="#">
+                    <i class="entypo-layout"></i>
+                    <span>数据统计</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/mongo/tableData">
+                            <i class="icon-tasks"></i>
+                            <span>数据总览</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="/mongo/historyTableData/">
+                            <i class="icon-star"></i>
+                            <span>房源收藏</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="entypo-chart-bar"></i>
+                    <span>可视化图表</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/mongo/houseDistribute/">
+                            <i class="entypo-light-down"></i>
+                            <span>房源分布</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/typeincity/">
+                            <i class="entypo-feather"></i>
+                            <span>户型占比</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/housewordcloud">
+                            <i class="entypo-lamp"></i>
+                            <span>词云汇总</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/housetyperank/">
+                            <i class="entypo-graduation-cap"></i>
+                            <span>类型级别</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/servicemoney/">
+                            <i class="entypo-network"></i>
+                            <span>价钱影响</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/heatmap-analysis/">
+                            <i class="entypo-chart-pie"></i>
+                            <span>热力图分析</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="/mongo/predict-all-prices/">
+                    <i class="icon-bar-chart"></i>
+                    <span>房价预测</span>
+                </a>
+            </li>
+            <li>
+                <a href="/app/login/" style="color: #ff9800;">
+                    <i class="entypo-database"></i>
+                    <span>切换到MySQL版</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="row">
+            <!-- Raw Links -->
+            <div style="display:flex;" class="col-md-12 hidden-xs">
+                <ol class="breadcrumb bc-3">
+                    <li>
+                        <a href="#"><i class="entypo-home"></i>数据统计</a>
+                    </li>
+                    <li class="active">
+                        <strong>数据收藏 - MongoDB版本</strong>
+                    </li>
+                </ol>
+                <ul style="margin-left:auto" class="list-inline links-list pull-right">
+                    <li class="sep"></li>
+                    <li>
+                        <a href="/mongo/logOut">
+                            退出登录 <i class="entypo-logout right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <hr style="margin-top:0">
+
+        <!-- 数据库类型提示 -->
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="alert alert-success">
+                    <strong>MongoDB版本 - 房源收藏</strong> - 当前显示您收藏的房源数据
+                    <span class="pull-right">数据库类型: {{ database_type|default:"MongoDB" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <h2>数据收藏</h2>
+        <br>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="panel panel-default" data-collapsed="0">
+                    <!-- panel head -->
+                    <div class="panel-heading">
+                        <div class="panel-title">收藏数据表格 - MongoDB版本</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table table-bordered datatable" id="table-1">
+                            <thead>
+                            <tr>
+                                <th>编号</th>
+                                <th>图片</th>
+                                <th>房源名称</th>
+                                <th>房源类型</th>
+                                <th>房源布局/地址</th>
+                                <th>标签</th>
+                                <th>行政区</th>
+                                <th>街道</th>
+                                <th>房源面积</th>
+                                <th>朝向</th>
+                                <th>价钱</th>
+                                <th>收藏时间</th>
+                                <th>跳转</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for item in historyData %}
+                                <tr class="gradeU">
+                                    <td>{{ forloop.counter }}</td>
+                                    <td class="center">
+                                        {% if item.house.images %}
+                                            <img src="{{ item.house.images.0 }}" alt="" style="max-width: 50px; max-height: 50px;">
+                                        {% else %}
+                                            <span class="text-muted">无图片</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="center">{{ item.house.title }}</td>
+                                    <td class="center">{{ item.house.rental_type }}</td>
+                                    <td class="center">{{ item.house.location.building }}</td>
+                                    <td class="center">
+                                        {% for tag in item.house.tags %}
+                                            <span class="label label-info">{{ tag }}</span>
+                                        {% empty %}
+                                            <span class="text-muted">无标签</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td class="center">{{ item.house.location.city }}</td>
+                                    <td class="center">{{ item.house.location.street }}</td>
+                                    <td class="center">{{ item.house.features.area }}㎡</td>
+                                    <td class="center">{{ item.house.features.direction|default:"未知" }}</td>
+                                    <td class="center">¥{{ item.house.price.monthly_rent }}/月</td>
+                                    <td class="center">{{ item.collected_time|date:"Y-m-d H:i" }}</td>
+                                    <td class="center text-center">
+                                        <a target="_blank" href="{{ item.house.crawl_meta.source_url }}" class="btn btn-info btn-sm">房源详情</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="13" class="text-center">
+                                        <div class="alert alert-info">
+                                            <i class="entypo-info"></i> 您还没有收藏任何房源，<a href="/mongo/tableData/">去浏览房源</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="main">
+            Copyright &copy; 2025. Python租房房源数据可视化分析 - MongoDB版本 <a target="_blank" href="https://hz.lianjia.com/">链家网</a>
+        </footer>
+    </div>
+</div>
+
+<!-- Bottom Scripts -->
+<script src="/static/js/main-gsap.js"></script>
+<script src="/static/js/jquery-ui-1.10.3.minimal.min.js"></script>
+<script src="/static/js/bootstrap.js"></script>
+<script src="/static/js/joinable.js"></script>
+<script src="/static/js/resizeable.js"></script>
+<script src="/static/js/fileinput.js"></script>
+<script src="/static/js/neon-api.js"></script>
+<script src="/static/js/neon-chat.js"></script>
+<script src="/static/js/neon-custom.js"></script>
+<script src="/static/js/neon-demo.js"></script>
+
+</body>
+</html>

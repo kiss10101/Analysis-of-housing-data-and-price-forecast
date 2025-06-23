@@ -1,0 +1,41 @@
+# 技术验证环境依赖包
+
+# 现有依赖（保持兼容）
+Django>=4.0.0
+pandas>=1.3.0
+numpy>=1.21.0
+matplotlib>=3.5.0
+scikit-learn>=1.0.0
+wordcloud>=1.8.0
+PyMySQL>=1.0.0
+requests>=2.25.0
+lxml>=4.6.0
+Pillow>=8.0.0
+
+# Scrapy相关
+Scrapy>=2.8.0
+scrapy-splash>=0.8.0
+scrapy-redis>=0.7.0
+scrapyd>=1.3.0
+itemadapter>=0.7.0
+itemloaders>=1.0.0
+
+# MongoDB相关
+pymongo>=4.3.0
+mongoengine>=0.24.0
+djongo>=1.3.6
+dnspython>=2.3.0
+
+# 性能测试和监控
+pytest>=7.0.0
+pytest-benchmark>=4.0.0
+memory-profiler>=0.60.0
+psutil>=5.9.0
+
+# 数据迁移工具
+tqdm>=4.64.0
+jsonlines>=3.1.0
+
+# 开发工具
+ipython>=8.0.0
+jupyter>=1.0.0
