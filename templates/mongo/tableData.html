@@ -340,7 +340,15 @@
                                     </td>
                                     <td class="center">{{ house.title }}</td>
                                     <td class="center">{{ house.rental_type|default:"整租" }}</td>
-                                    <td class="center">{{ house.location.building|default:house.building }}</td>
+                                    <td class="center">
+                                        {% if house.location.building %}
+                                            {{ house.location.building }}
+                                        {% elif house.building %}
+                                            {{ house.building }}
+                                        {% else %}
+                                            未知
+                                        {% endif %}
+                                    </td>
                                     <td class="center">
                                         {% if house.tags %}
                                             {% for tag in house.tags %}
@@ -352,11 +360,21 @@
                                             <span class="label label-success">精装修</span>
                                         {% endif %}
                                     </td>
-                                    <td class="center">{{ house.location.city|default:house.city }}</td>
-                                    <td class="center">{{ house.location.street|default:house.street }}</td>
-                                    <td class="center">{{ house.features.area|default:house.area }}㎡</td>
-                                    <td class="center">{{ house.features.direction|default:house.orientation|default:"未知" }}</td>
-                                    <td class="center">¥{{ house.price.monthly_rent|default:house.price }}/月</td>
+                                    <td class="center">
+                                        {% if house.location.city %}{{ house.location.city }}{% elif house.city %}{{ house.city }}{% else %}未知{% endif %}
+                                    </td>
+                                    <td class="center">
+                                        {% if house.location.street %}{{ house.location.street }}{% elif house.street %}{{ house.street }}{% else %}未知{% endif %}
+                                    </td>
+                                    <td class="center">
+                                        {% if house.features.area %}{{ house.features.area }}{% elif house.area %}{{ house.area }}{% else %}0{% endif %}㎡
+                                    </td>
+                                    <td class="center">
+                                        {% if house.features.direction %}{{ house.features.direction }}{% elif house.orientation %}{{ house.orientation }}{% else %}未知{% endif %}
+                                    </td>
+                                    <td class="center">
+                                        ¥{% if house.price.monthly_rent %}{{ house.price.monthly_rent }}{% elif house.price %}{{ house.price }}{% else %}0{% endif %}/月
+                                    </td>
                                     <td class="center text-center">
                                         <a target="_blank" href="{{ house.crawl_meta.source_url }}" class="btn btn-info btn-sm">房源详情</a>
                                         <a target="__blank" href="/mongo/addHistory/{{ house.id }}" class="btn btn-danger btn-sm">收藏房源</a>

@@ -12,7 +12,7 @@ MONGODB_URI_ADMIN = 'mongodb://admin:admin123@localhost:27017/house_data?authSou
 
 # 默认配置（请根据您的环境选择）
 # 尝试多种连接方式
-MONGODB_URI = MONGODB_URI_ADMIN  # 尝试使用管理员连接
+MONGODB_URI = MONGODB_URI_NO_AUTH  # 使用无认证连接
 
 # 数据库名称
 MONGODB_DATABASE = 'house_data'

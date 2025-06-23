@@ -34,6 +34,8 @@ urlpatterns = [
     path('servicemoney/', views.servicemoney, name='servicemoney'),
     path('train-model/', views.train_house_model, name='train_model'),
     path('predict-all-prices/', views.predict_all_prices, name='predict_all_prices'),
+    path('pricePredict/', views.predict_all_prices, name='price_predict_alt'),
     path('heatmap-analysis/', views.heatmap_analysis, name='heatmap_analysis'),
+    path('heatmap_analysis/', views.heatmap_analysis, name='heatmap_analysis_alt'),
 
 ]

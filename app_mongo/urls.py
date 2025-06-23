@@ -29,9 +29,11 @@ urlpatterns = [
     path('housetyperank/', views.mongo_house_type_rank, name='mongo_house_type_rank'),
     path('servicemoney/', views.mongo_service_money, name='mongo_service_money'),
     path('heatmap-analysis/', views.mongo_heatmap_analysis, name='mongo_heatmap_analysis'),
+    path('heatmap_analysis/', views.mongo_heatmap_analysis, name='mongo_heatmap_analysis_alt'),
 
     # 房价预测
     path('predict-all-prices/', views.mongo_predict_all_prices, name='mongo_predict_all_prices'),
+    path('pricePredict/', views.mongo_predict_all_prices, name='mongo_price_predict_alt'),
 
     # 默认重定向到登录页
     path('', views.mongo_login, name='mongo_default'),
