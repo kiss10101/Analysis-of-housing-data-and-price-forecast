@@ -1,0 +1,32 @@
+# JetBrains IDEs (like PyCharm, .idea)
+# 你之前提供的 .idea 忽略规则
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Log files
+*.log
+
+# Office temporary files
+~$*
+
+# Django specific
+*.sqlite3
+db.sqlite3
+
+# Windows specific
+Thumbs.db
+desktop.ini
+
+# Local configs (可以根据需要取消注释)
+# mongod_dev.conf
+# *.bat

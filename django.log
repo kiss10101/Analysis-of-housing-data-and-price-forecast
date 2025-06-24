@@ -5584,3 +5584,9 @@ WARNING 2025-06-24 18:01:28,709 log 148640 146456 Not Found: /media/user/avatar/
 WARNING 2025-06-24 18:01:28,709 basehttp 148640 146456 "GET /media/user/avatar/2_8OZEt3l.jpg HTTP/1.1" 404 3009
 INFO 2025-06-24 18:01:35,894 basehttp 148640 146456 "GET /app/houseDistribute/ HTTP/1.1" 200 12880
 INFO 2025-06-24 18:01:40,653 basehttp 148640 146456 "GET /app/typeincity/ HTTP/1.1" 200 10007
+INFO 2025-06-24 19:55:10,636 basehttp 148640 116604 "GET /mongo/housetyperank/ HTTP/1.1" 302 0
+INFO 2025-06-24 19:55:10,652 basehttp 148640 116604 "GET /mongo/login/ HTTP/1.1" 200 4272
+INFO 2025-06-24 20:09:32,204 basehttp 148640 60712 "GET /mongo/login/ HTTP/1.1" 200 4272
+INFO 2025-06-24 20:29:00,887 autoreload 94952 146176 Watching for file changes with StatReloader
+INFO 2025-06-24 20:29:11,248 basehttp 94952 144400 "GET /app/login/ HTTP/1.1" 200 3901
+INFO 2025-06-24 20:29:11,251 basehttp 94952 144816 "GET /mongo/login/ HTTP/1.1" 200 4272
