@@ -208,29 +208,67 @@
     var chartDom = document.getElementById('mainOne');
     var myChart = echarts.init(chartDom);
     var option;
+// 面积与价格关系图表 - MongoDB版本
 option = {
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      // Use axis to trigger tooltip
-      type: 'shadow' // 'shadow' as default; can also be 'line' or 'shadow'
-    }
-  },
-  legend: {},
-  grid: {
-    left: '3%',
-    right: '4%',
-    bottom: '3%',
-    containLabel: true
-  },
-  xAxis: {
-    type: 'value'
-  },
-  yAxis: {
-    type: 'category',
-    data: {{ cities|safe }}
-  },
-  series: {{ series | safe }}
+    title: {
+        text: '面积与价格关系分析 - MongoDB版本',
+        left: 'center',
+        textStyle: {
+            color: '#4CAF50',
+            fontSize: 18,
+            fontWeight: 'bold'
+        }
+    },
+    tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+            type: 'shadow'
+        },
+        formatter: function(params) {
+            return params[0].name + '<br/>' +
+                   '平均价格: ¥' + params[0].value + '/月';
+        }
+    },
+    grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+    },
+    xAxis: {
+        type: 'category',
+        data: {{ area_ranges|safe }},
+        name: '面积区间',
+        nameLocation: 'middle',
+        nameGap: 30,
+        axisLabel: {
+            rotate: 45
+        }
+    },
+    yAxis: {
+        type: 'value',
+        name: '平均价格(元/月)',
+        nameLocation: 'middle',
+        nameGap: 50
+    },
+    series: [
+        {
+            name: '平均价格',
+            type: 'bar',
+            data: {{ avg_prices|safe }},
+            itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    {offset: 0, color: '#4CAF50'},
+                    {offset: 1, color: '#2E7D32'}
+                ])
+            },
+            label: {
+                show: true,
+                position: 'top',
+                formatter: '¥{c}'
+            }
+        }
+    ]
 };
 
     option && myChart.setOption(option);

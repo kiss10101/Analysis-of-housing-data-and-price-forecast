@@ -370,7 +370,21 @@
                                         {% if house.features.area %}{{ house.features.area }}{% elif house.area %}{{ house.area }}{% else %}0{% endif %}㎡
                                     </td>
                                     <td class="center">
-                                        {% if house.features.direction %}{{ house.features.direction }}{% elif house.orientation %}{{ house.orientation }}{% else %}未知{% endif %}
+                                        {% if house.features.direction %}
+                                            {% if house.features.direction|add:"0" == house.features.direction %}
+                                                未知
+                                            {% else %}
+                                                {{ house.features.direction }}
+                                            {% endif %}
+                                        {% elif house.orientation %}
+                                            {% if house.orientation|add:"0" == house.orientation %}
+                                                未知
+                                            {% else %}
+                                                {{ house.orientation }}
+                                            {% endif %}
+                                        {% else %}
+                                            未知
+                                        {% endif %}
                                     </td>
                                     <td class="center">
                                         ¥{% if house.price.monthly_rent %}{{ house.price.monthly_rent }}{% elif house.price %}{{ house.price }}{% else %}0{% endif %}/月

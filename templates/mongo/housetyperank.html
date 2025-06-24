@@ -334,7 +334,10 @@
                         fontSize: 10
                     }
                 },
-                data: {{ list1 | safe }}
+                data: {{ types|safe }}.map((type, index) => ({
+                    name: type,
+                    value: {{ avg_prices|safe }}[index]
+                }))
             }
         ]
     };
@@ -358,7 +361,7 @@
             }
         },
         legend: {
-            data: {{ list2_legend | safe }}
+            data: {{ types|safe }}
         },
         series: [
             {
@@ -394,7 +397,10 @@
                         fontSize: 20
                     }
                 },
-                data: {{ list2 | safe }}
+                data: {{ types|safe }}.map((type, index) => ({
+                    name: type,
+                    value: {{ counts|safe }}[index]
+                }))
             }
         ]
     };
@@ -418,7 +424,7 @@
             }
         },
         legend: {
-            data: {{ list3_legend | safe }}
+            data: {{ types|safe }}
         },
         series: [
             {
@@ -454,7 +460,10 @@
                         fontSize: 20
                     }
                 },
-                data: {{ list3 | safe }}
+                data: {{ types|safe }}.map((type, index) => ({
+                    name: type + ' (平均价格)',
+                    value: {{ avg_prices|safe }}[index]
+                }))
             }
         ]
     };

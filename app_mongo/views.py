@@ -690,12 +690,30 @@ def mongo_house_distribute(request):
             types = stats['rental_types']
             defaultType = '不限'
 
-            result1 = [{'value': 2, 'name': '广州'}, {'value': 1, 'name': '深圳'}]
-            result2 = [{'value': 1, 'name': '体育西路'}, {'value': 1, 'name': '中山路'}]
+            # 使用500条降级数据生成真实的图表数据
+            filtered_houses = FALLBACK_HOUSES
+            if type_name and type_name != '不限':
+                filtered_houses = [h for h in FALLBACK_HOUSES if h.get('rental_type') == type_name]
+
+            # 区域分布统计
+            district_count = {}
+            for house in filtered_houses:
+                district = house.get('district', '未知')
+                district_count[district] = district_count.get(district, 0) + 1
+
+            result1 = [{'value': count, 'name': district} for district, count in sorted(district_count.items(), key=lambda x: x[1], reverse=True)]
+
+            # 街道分布统计（取前10个）
+            street_count = {}
+            for house in filtered_houses:
+                street = house.get('street', '未知')
+                street_count[street] = street_count.get(street, 0) + 1
+
+            result2 = [{'value': count, 'name': street} for street, count in sorted(street_count.items(), key=lambda x: x[1], reverse=True)[:10]]
 
     context = {
-        'result1': result1,
-        'result2': result2,
+        'result1': json.dumps(result1),
+        'result2': json.dumps(result2),
         'username': username,
         'useravatar': useravatar,
         'types': types,
@@ -916,9 +934,40 @@ def mongo_service_money(request):
     fallback_mode = request.session.get('fallback_mode', False)
 
     if fallback_mode:
-        # 降级模式：使用模拟数据
-        area_ranges = ['30㎡以下', '30-50㎡', '50-80㎡', '80-120㎡', '120㎡以上']
-        avg_prices = [1500, 2500, 3500, 5000, 7000]
+        # 降级模式：使用500条真实数据
+        from .fallback_data import FALLBACK_HOUSES
+
+        # 按面积分组统计价格
+        area_groups = {
+            '30㎡以下': [],
+            '30-50㎡': [],
+            '50-80㎡': [],
+            '80-120㎡': [],
+            '120㎡以上': []
+        }
+
+        for house in FALLBACK_HOUSES:
+            area = house.get('area', 0)
+            price = house.get('price', 0)
+
+            if area < 30:
+                area_groups['30㎡以下'].append(price)
+            elif area < 50:
+                area_groups['30-50㎡'].append(price)
+            elif area < 80:
+                area_groups['50-80㎡'].append(price)
+            elif area < 120:
+                area_groups['80-120㎡'].append(price)
+            else:
+                area_groups['120㎡以上'].append(price)
+
+        # 计算平均价格
+        area_ranges = []
+        avg_prices = []
+        for area_range, prices in area_groups.items():
+            if prices:  # 只包含有数据的区间
+                area_ranges.append(area_range)
+                avg_prices.append(round(sum(prices) / len(prices), 2))
     else:
         try:
             # 正常模式：使用MongoDB数据
@@ -986,18 +1035,44 @@ def mongo_heatmap_analysis(request):
     fallback_mode = request.session.get('fallback_mode', False)
 
     if fallback_mode:
-        # 降级模式：使用模拟数据
-        cities = ['广州', '深圳']
-        types = ['整租', '合租']
-        city_type_price = [
-            [0, 0, 4500],  # 广州-整租
-            [0, 1, 2000],  # 广州-合租
-            [1, 0, 6000],  # 深圳-整租
-            [1, 1, 3000]   # 深圳-合租
-        ]
-        area_price_data = [
-            [20, 1500], [30, 2000], [50, 3000], [80, 4500], [120, 6800]
-        ]
+        # 降级模式：使用500条真实数据
+        from .fallback_data import FALLBACK_HOUSES
+
+        # 统计城市和租赁类型
+        city_type_stats = {}
+        for house in FALLBACK_HOUSES:
+            city = house.get('city', '广州')
+            rental_type = house.get('rental_type', '整租')
+            price = house.get('price', 0)
+
+            key = f"{city}-{rental_type}"
+            if key not in city_type_stats:
+                city_type_stats[key] = {'prices': [], 'count': 0}
+            city_type_stats[key]['prices'].append(price)
+            city_type_stats[key]['count'] += 1
+
+        # 获取所有城市和类型
+        cities = list(set([house.get('city', '广州') for house in FALLBACK_HOUSES]))
+        types = list(set([house.get('rental_type', '整租') for house in FALLBACK_HOUSES]))
+
+        # 生成热力图数据
+        city_type_price = []
+        for i, city in enumerate(cities):
+            for j, rental_type in enumerate(types):
+                key = f"{city}-{rental_type}"
+                if key in city_type_stats and city_type_stats[key]['prices']:
+                    avg_price = sum(city_type_stats[key]['prices']) / len(city_type_stats[key]['prices'])
+                    city_type_price.append([i, j, round(avg_price, 2)])
+                else:
+                    city_type_price.append([i, j, 0])
+
+        # 生成面积-价格散点图数据（取前100个点避免过多）
+        area_price_data = []
+        for house in FALLBACK_HOUSES[:100]:
+            area = house.get('area', 0)
+            price = house.get('price', 0)
+            if area > 0 and price > 0:
+                area_price_data.append([area, price])
     else:
         try:
             # 正常模式：使用MongoDB数据
@@ -1083,9 +1158,34 @@ def mongo_predict_all_prices(request):
     fallback_mode = request.session.get('fallback_mode', False)
 
     if fallback_mode:
-        # 降级模式：使用模拟数据
-        price_ranges = ['2000以下', '2000-3000', '3000-4000', '4000-5000', '5000以上']
-        counts = [1, 2, 1, 1, 0]
+        # 降级模式：使用500条真实数据
+        from .fallback_data import FALLBACK_HOUSES
+
+        # 按价格分组统计
+        price_groups = {
+            '2000以下': 0,
+            '2000-3000': 0,
+            '3000-4000': 0,
+            '4000-5000': 0,
+            '5000以上': 0
+        }
+
+        for house in FALLBACK_HOUSES:
+            price = house.get('price', 0)
+
+            if price < 2000:
+                price_groups['2000以下'] += 1
+            elif price < 3000:
+                price_groups['2000-3000'] += 1
+            elif price < 4000:
+                price_groups['3000-4000'] += 1
+            elif price < 5000:
+                price_groups['4000-5000'] += 1
+            else:
+                price_groups['5000以上'] += 1
+
+        price_ranges = list(price_groups.keys())
+        counts = list(price_groups.values())
     else:
         try:
             # 正常模式：使用MongoDB数据

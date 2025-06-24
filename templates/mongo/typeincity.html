@@ -217,93 +217,66 @@
     var chartDom = document.getElementById('mainOne');
     var myChart = echarts.init(chartDom);
     var option;
-// There should not be negative values in rawData
-const rawData = {{ result|safe }};
-const totalData = [];
-for (let i = 0; i < rawData[0].length; ++i) {
-  let sum = 0;
-  for (let j = 0; j < rawData.length; ++j) {
-    sum += rawData[j][i];
-  }
-  totalData.push(sum);
-}
-const grid = {
-  left: 100,
-  right: 100,
-  top: 50,
-  bottom: 50
-};
-const gridWidth = myChart.getWidth() - grid.left - grid.right;
-const gridHeight = myChart.getHeight() - grid.top - grid.bottom;
-const categoryWidth = gridWidth / rawData[0].length;
-const barWidth = categoryWidth * 0.6;
-const barPadding = (categoryWidth - barWidth) / 2;
-const series = {{ types|safe }}.map((name, sid) => {
-  return {
-    name,
-    type: 'bar',
-    stack: 'total',
-    barWidth: '60%',
-    label: {
-      show: true,
-      formatter: (params) => Math.round(params.value * 1000) / 10 + '%'
-    },
-    data: rawData[sid].map((d, did) =>
-      totalData[did] <= 0 ? 0 : d / totalData[did]
-    )
-  };
-});
-const color = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'];
-const elements = [];
-for (let j = 1, jlen = rawData[0].length; j < jlen; ++j) {
-  const leftX = grid.left + categoryWidth * j - barPadding;
-  const rightX = leftX + barPadding * 2;
-  let leftY = grid.top + gridHeight;
-  let rightY = leftY;
-  for (let i = 0, len = series.length; i < len; ++i) {
-    const points = [];
-    const leftBarHeight = (rawData[i][j - 1] / totalData[j - 1]) * gridHeight;
-    points.push([leftX, leftY]);
-    points.push([leftX, leftY - leftBarHeight]);
-    const rightBarHeight = (rawData[i][j] / totalData[j]) * gridHeight;
-    points.push([rightX, rightY - rightBarHeight]);
-    points.push([rightX, rightY]);
-    points.push([leftX, leftY]);
-    leftY -= leftBarHeight;
-    rightY -= rightBarHeight;
-    elements.push({
-      type: 'polygon',
-      shape: {
-        points
-      },
-      style: {
-        fill: color[i],
-        opacity: 0.25
-      }
-    });
-  }
-}
+// 户型占比饼图 - MongoDB版本
+const pieData = {{ result|safe }};
+
 option = {
-  legend: {
-    selectedMode: false
-  },
-  grid,
-  yAxis: {
-    type: 'value'
-  },
-  xAxis: {
-    type: 'category',
-    data: {{ cities|safe }}
-  },
-  series,
-  graphic: {
-    elements
-  }
+    title: {
+        text: '户型占比分布 - MongoDB版本',
+        left: 'center',
+        textStyle: {
+            color: '#4CAF50',
+            fontSize: 18,
+            fontWeight: 'bold'
+        }
+    },
+    tooltip: {
+        trigger: 'item',
+        formatter: '{a} <br/>{b}: {c}套 ({d}%)'
+    },
+    legend: {
+        orient: 'vertical',
+        left: 'left',
+        data: pieData.map(item => item.name)
+    },
+    series: [
+        {
+            name: '户型分布',
+            type: 'pie',
+            radius: ['40%', '70%'],
+            center: ['60%', '50%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+                borderRadius: 10,
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            label: {
+                show: true,
+                formatter: '{b}: {c}套\n({d}%)'
+            },
+            emphasis: {
+                label: {
+                    show: true,
+                    fontSize: '16',
+                    fontWeight: 'bold'
+                }
+            },
+            labelLine: {
+                show: true
+            },
+            data: pieData
+        }
+    ],
+    color: ['#4CAF50', '#2196F3', '#FF9800', '#F44336', '#9C27B0', '#607D8B']
 };
 
     option && myChart.setOption(option);
-</script>
-<script>
+
+    // 响应式处理
+    window.addEventListener('resize', function() {
+        myChart.resize();
+    });
 </script>
 </body>
 </html>
