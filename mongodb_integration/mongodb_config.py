@@ -2,7 +2,7 @@
 # 房源数据分析系统
 
 # 配置选项1：无认证连接（开发环境）
-MONGODB_URI_NO_AUTH = 'mongodb://localhost:27017/'
+MONGODB_URI_NO_AUTH = 'mongodb://localhost:27018/'
 
 # 配置选项2：认证连接（生产环境）
 MONGODB_URI_WITH_AUTH = 'mongodb://house_user:house_password@localhost:27017/house_data'
@@ -72,7 +72,7 @@ def setup_mongoengine():
         mongoengine.connect(
             db=MONGODB_DATABASE,
             host='127.0.0.1',
-            port=27017,
+            port=27018,
             serverSelectionTimeoutMS=5000,
             connectTimeoutMS=10000,
             socketTimeoutMS=30000

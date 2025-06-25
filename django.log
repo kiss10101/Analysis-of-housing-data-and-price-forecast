@@ -5590,3 +5590,43 @@ INFO 2025-06-24 20:09:32,204 basehttp 148640 60712 "GET /mongo/login/ HTTP/1.1" 
 INFO 2025-06-24 20:29:00,887 autoreload 94952 146176 Watching for file changes with StatReloader
 INFO 2025-06-24 20:29:11,248 basehttp 94952 144400 "GET /app/login/ HTTP/1.1" 200 3901
 INFO 2025-06-24 20:29:11,251 basehttp 94952 144816 "GET /mongo/login/ HTTP/1.1" 200 4272
+INFO 2025-06-24 20:42:58,470 basehttp 94952 64136 "GET /app/login/ HTTP/1.1" 200 3901
+INFO 2025-06-24 20:42:58,478 basehttp 94952 147524 "GET /mongo/login/ HTTP/1.1" 200 4272
+INFO 2025-06-24 20:44:44,632 basehttp 94952 150700 "GET /mongo/login/ HTTP/1.1" 200 4272
+INFO 2025-06-24 20:44:54,926 basehttp 94952 138756 "POST /mongo/login/ HTTP/1.1" 302 0
+INFO 2025-06-24 20:44:54,976 basehttp 94952 138756 "GET /mongo/index/ HTTP/1.1" 200 18170
+INFO 2025-06-24 20:44:55,058 basehttp 94952 138756 "GET /media/user/avatar/default.png HTTP/1.1" 304 0
+INFO 2025-06-24 20:45:00,545 basehttp 94952 116012 "GET /mongo/selfInfo/ HTTP/1.1" 200 12510
+INFO 2025-06-24 20:45:02,802 basehttp 94952 116012 "GET /mongo/tableData HTTP/1.1" 301 0
+INFO 2025-06-24 20:45:02,904 basehttp 94952 147588 "GET /mongo/tableData/ HTTP/1.1" 200 1209404
+INFO 2025-06-24 20:45:07,518 basehttp 94952 99896 "GET /mongo/historyTableData/ HTTP/1.1" 200 12548
+INFO 2025-06-24 20:45:10,350 basehttp 94952 99896 "GET /mongo/houseDistribute/ HTTP/1.1" 200 13865
+INFO 2025-06-24 20:45:12,506 basehttp 94952 99896 "GET /mongo/typeincity/ HTTP/1.1" 200 9792
+INFO 2025-06-24 20:45:14,253 basehttp 94952 99896 "GET /mongo/housewordcloud/ HTTP/1.1" 200 8691
+INFO 2025-06-24 20:45:17,313 basehttp 94952 99896 "GET /mongo/housetyperank/ HTTP/1.1" 200 15949
+INFO 2025-06-24 20:45:18,851 basehttp 94952 62228 "GET /mongo/servicemoney/ HTTP/1.1" 200 9530
+INFO 2025-06-24 20:45:20,515 basehttp 94952 62228 "GET /mongo/predict-all-prices/ HTTP/1.1" 200 8926
+INFO 2025-06-24 20:45:23,881 basehttp 94952 62228 "GET /app/login/ HTTP/1.1" 200 3901
+INFO 2025-06-24 20:45:26,935 basehttp 94952 62228 "POST /app/login/ HTTP/1.1" 302 0
+INFO 2025-06-24 20:45:27,352 basehttp 94952 95716 "POST /app/login/ HTTP/1.1" 302 0
+INFO 2025-06-24 20:45:27,559 basehttp 94952 62228 - Broken pipe from ('127.0.0.1', 38131)
+INFO 2025-06-24 20:45:27,654 basehttp 94952 95716 "GET /app/index/ HTTP/1.1" 200 20709
+WARNING 2025-06-24 20:45:27,760 log 94952 95716 Not Found: /media/user/avatar/2_F1dr6d7.jpg
+WARNING 2025-06-24 20:45:27,760 basehttp 94952 95716 "GET /media/user/avatar/2_F1dr6d7.jpg HTTP/1.1" 404 3009
+WARNING 2025-06-24 20:45:27,773 log 94952 95716 Not Found: /media/user/avatar/2_4kaNB7M.jpg
+WARNING 2025-06-24 20:45:27,774 basehttp 94952 95716 "GET /media/user/avatar/2_4kaNB7M.jpg HTTP/1.1" 404 3009
+WARNING 2025-06-24 20:45:27,796 log 94952 95716 Not Found: /media/user/avatar/2.jpg
+WARNING 2025-06-24 20:45:27,797 basehttp 94952 95716 "GET /media/user/avatar/2.jpg HTTP/1.1" 404 2977
+WARNING 2025-06-24 20:45:27,810 log 94952 95716 Not Found: /media/user/avatar/2_8OZEt3l.jpg
+WARNING 2025-06-24 20:45:27,811 basehttp 94952 95716 "GET /media/user/avatar/2_8OZEt3l.jpg HTTP/1.1" 404 3009
+INFO 2025-06-24 20:45:31,393 basehttp 94952 95716 "GET /app/houseDistribute/ HTTP/1.1" 200 12880
+INFO 2025-06-24 20:45:39,780 basehttp 94952 68196 "GET /app/housetyperank/ HTTP/1.1" 200 19791
+INFO 2025-06-24 20:45:45,382 basehttp 94952 68196 "GET /app/servicemoney/ HTTP/1.1" 200 8753
+INFO 2025-06-24 20:45:49,967 basehttp 94952 147672 "GET /app/housetyperank/ HTTP/1.1" 200 19791
+INFO 2025-06-24 20:48:29,797 basehttp 94952 91972 "GET /app/tableData/ HTTP/1.1" 200 16720253
+WARNING 2025-06-24 20:49:01,500 log 94952 148908 Not Found: /app/tableData/script.js
+WARNING 2025-06-24 20:49:01,501 basehttp 94952 148908 "GET /app/tableData/script.js HTTP/1.1" 404 6097
+INFO 2025-06-25 09:49:42,097 autoreload 28652 6904 Watching for file changes with StatReloader
+INFO 2025-06-25 09:58:20,085 autoreload 28652 6904 D:\Program Files\cursor-workpace\房源数据分析与价格预测\app_mongo\models.py changed, reloading.
+INFO 2025-06-25 09:58:21,117 autoreload 32640 436 Watching for file changes with StatReloader
+INFO 2025-06-25 09:58:35,853 autoreload 7624 12368 Watching for file changes with StatReloader

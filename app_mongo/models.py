@@ -23,12 +23,12 @@ def safe_mongodb_connect():
     global MONGODB_CONNECTION_SUCCESS
 
     connection_attempts = [
-        # 方案1：尝试无认证连接
+        # 方案1：尝试无认证连接（开发环境端口27018）
         {
             'params': {
                 'db': 'house_data',
                 'host': '127.0.0.1',
-                'port': 27017,
+                'port': 27018,
                 'maxPoolSize': 10,
                 'serverSelectionTimeoutMS': 3000,
                 'connectTimeoutMS': 5000,
@@ -41,7 +41,7 @@ def safe_mongodb_connect():
             'params': {
                 'db': 'house_data',
                 'host': '127.0.0.1',
-                'port': 27017,
+                'port': 27018,
                 'username': 'admin',
                 'password': 'admin123',
                 'authentication_source': 'admin',
