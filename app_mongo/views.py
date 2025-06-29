@@ -20,6 +20,9 @@ from sklearn.pipeline import Pipeline
 import joblib
 
 # MongoDB版本的登录
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def mongo_login(request):
     if request.method == 'GET':
         return render(request, 'mongo/login.html')
@@ -45,7 +48,7 @@ def mongo_login(request):
                     return render(request, 'mongo/login.html', {"msg": msg})
             else:
                 # 使用降级数据
-                from .fallback_data import FallbackMongoUser
+                from .fallback_data_10k import FallbackMongoUser
                 user = FallbackMongoUser.objects(username=name, password=password).first()
                 if user:
                     request.session['mongo_username'] = {
@@ -126,10 +129,10 @@ def mongo_index(request):
     fallback_mode = request.session.get('fallback_mode', False)
 
     if fallback_mode:
-        # 降级模式：使用模拟数据
-        from .fallback_data import get_fallback_stats, FALLBACK_USERS
+        # 降级模式：使用10K模拟数据
+        from .fallback_data_10k import get_fallback_stats_10k, FALLBACK_USERS
 
-        stats = get_fallback_stats()
+        stats = get_fallback_stats_10k()
         result = [{'name': '2025-06-23', 'value': len(FALLBACK_USERS)}]
         newuserlist = FALLBACK_USERS[:3]  # 最新3个用户
         houseslength = stats['total_houses']
@@ -270,14 +273,14 @@ def mongo_self_info(request):
     # 获取用户信息
     if fallback_mode:
         # 降级模式：使用模拟用户信息
-        from .fallback_data import FallbackMongoUser
+        from .fallback_data_10k import FallbackMongoUser
         userInfo = FallbackMongoUser.objects(username=username).first()
     else:
         try:
             userInfo = MongoUser.objects(username=username).first()
         except:
             # MongoDB查询失败，使用降级数据
-            from .fallback_data import FallbackMongoUser
+            from .fallback_data_10k import FallbackMongoUser
             userInfo = FallbackMongoUser.objects(username=username).first()
 
     context = {
@@ -298,12 +301,16 @@ def mongo_table_data(request):
     useravatar = request.session['mongo_username'].get('avatar')
     fallback_mode = request.session.get('fallback_mode', False)
 
-    if fallback_mode:
-        # 降级模式：使用模拟数据
-        from .fallback_data import FALLBACK_HOUSES, get_fallback_stats
+    # 使用正常模式但保留分布式存储架构
+    fallback_mode = False
+    request.session['fallback_mode'] = False
 
-        stats = get_fallback_stats()
-        houses = FALLBACK_HOUSES
+    if fallback_mode:
+        # 降级模式：使用10K模拟数据
+        from .fallback_data_10k import FALLBACK_HOUSES_10K, get_fallback_stats_10k
+
+        stats = get_fallback_stats_10k()
+        houses = FALLBACK_HOUSES_10K
         total = len(houses)
         cities = stats['cities']
         rental_types = stats['rental_types']
@@ -315,7 +322,7 @@ def mongo_table_data(request):
             'total': total,
             'cities': cities,
             'rental_types': rental_types,
-            'database_type': 'MongoDB (演示模式)',
+            'database_type': 'MongoDB (演示模式 - 10K数据)',
             'server_side': False,
             'fallback_mode': True
         }
@@ -327,34 +334,104 @@ def mongo_table_data(request):
             db = client['house_data']
             collection = db['houses']
 
-            # 获取前100条数据作为示例（避免性能问题）
-            houses_cursor = collection.find({}).limit(100)
-            houses = list(houses_cursor)
-
+            # 启用服务器端分页，移除数据限制
             total = collection.count_documents({})
             cities = collection.distinct('location.city')
             rental_types = collection.distinct('rental_type')
 
+            # 获取所有房源数据用于客户端分页
+            houses_data = []
+            # 移除1000条限制，使用实际数据量（但为了性能考虑，仍然限制在合理范围内）
+            limit_count = min(total, 5000)  # 最多5000条，平衡性能和数据完整性
+            for doc in collection.find().limit(limit_count):
+                location = doc.get('location', {})
+                features = doc.get('features', {})
+                price_info = doc.get('price', {})
+                crawl_meta = doc.get('crawl_meta', {})
+
+                # 处理价格字段
+                if isinstance(price_info, dict):
+                    price_str = f"¥{price_info.get('monthly_rent', 0):.0f}/月"
+                else:
+                    price_str = f"¥{price_info:.0f}/月" if isinstance(price_info, (int, float)) else str(price_info)
+
+                # 处理面积字段
+                area_value = features.get('area', 0)
+                area_str = f"{area_value:.1f}㎡" if isinstance(area_value, (int, float)) else str(area_value)
+
+                # 处理图片
+                images = doc.get('images', [])
+                if images and len(images) > 0:
+                    image_html = f'<img src="{images[0]}" alt="房源图片" style="max-width: 50px; max-height: 50px; border-radius: 4px;" onerror="this.src=\'/static/picture/no-image.png\'; this.onerror=null;" loading="lazy">'
+                else:
+                    image_html = '<img src="/static/picture/no-image.png" alt="暂无图片" style="max-width: 50px; max-height: 50px; border-radius: 4px;">'
+
+                # 处理标签
+                tags = doc.get('tags', [])
+                if tags:
+                    tags_html = ''.join([f'<span class="label label-info">{tag}</span> ' for tag in tags[:3]])
+                else:
+                    tags_html = '<span class="text-muted">无标签</span>'
+
+                # 生成操作按钮HTML
+                house_id = str(doc.get('_id', ''))
+                source_url = crawl_meta.get('source_url', '#') if isinstance(crawl_meta, dict) else '#'
+                actions_html = f'''
+                    <a target="_blank" href="{source_url}" class="btn btn-info btn-sm">房源详情</a>
+                    <a href="/mongo/addHistory/{house_id}" class="btn btn-danger btn-sm" onclick="return confirm('确定要收藏这个房源吗？')">收藏房源</a>
+                '''
+
+                houses_data.append({
+                    'id': house_id,
+                    'title': doc.get('title', ''),
+                    'rental_type': doc.get('rental_type', ''),
+                    'location': {
+                        'city': location.get('city', ''),
+                        'street': location.get('street', ''),
+                        'building': location.get('building', '')
+                    },
+                    'features': {
+                        'area': area_value,
+                        'direction': features.get('direction', '未知')
+                    },
+                    'price': {
+                        'monthly_rent': price_info.get('monthly_rent', 0) if isinstance(price_info, dict) else price_info
+                    },
+                    'images': images,
+                    'tags': tags,
+                    'crawl_meta': {
+                        'source_url': source_url
+                    }
+                })
+
             context = {
                 'username': username,
                 'useravatar': useravatar,
-                'houses': houses,
+                'houses': houses_data,
                 'total': total,
                 'cities': cities,
                 'rental_types': rental_types,
                 'database_type': 'MongoDB',
-                'server_side': False
+                'server_side': False  # 使用客户端分页
             }
         except Exception as e:
-            # MongoDB连接失败，使用降级数据
-            from .fallback_data import FALLBACK_HOUSES, get_fallback_stats
+            # MongoDB连接失败，使用10K降级数据
+            from .fallback_data_10k import FALLBACK_HOUSES_10K, get_fallback_stats_10k
 
-            stats = get_fallback_stats()
+            stats = get_fallback_stats_10k()
+
+            # 为降级数据添加ID字段
+            houses_with_id = []
+            for i, house in enumerate(FALLBACK_HOUSES_10K):
+                house_copy = house.copy()
+                house_copy['id'] = f"fallback_{i}"
+                houses_with_id.append(house_copy)
+
             context = {
                 'username': username,
                 'useravatar': useravatar,
-                'houses': FALLBACK_HOUSES,
-                'total': len(FALLBACK_HOUSES),
+                'houses': houses_with_id,
+                'total': len(FALLBACK_HOUSES_10K),
                 'cities': stats['cities'],
                 'rental_types': stats['rental_types'],
                 'database_type': 'MongoDB (连接失败，演示模式)',
@@ -384,20 +461,20 @@ def mongo_table_data_api(request):
     fallback_mode = request.session.get('fallback_mode', False)
 
     if fallback_mode:
-        # 降级模式：使用模拟数据
-        from .fallback_data import FALLBACK_HOUSES
+        # 降级模式：使用10K模拟数据
+        from .fallback_data_10k import FALLBACK_HOUSES_10K
 
         # 过滤数据
-        filtered_houses = FALLBACK_HOUSES
+        filtered_houses = FALLBACK_HOUSES_10K
         if search_value:
             filtered_houses = [
-                house for house in FALLBACK_HOUSES
+                house for house in FALLBACK_HOUSES_10K
                 if search_value.lower() in house['title'].lower() or
                    search_value.lower() in house['city'].lower()
             ]
 
         # 分页
-        total_records = len(FALLBACK_HOUSES)
+        total_records = len(FALLBACK_HOUSES_10K)
         filtered_records = len(filtered_houses)
 
         end = start + length
@@ -425,10 +502,10 @@ def mongo_table_data_api(request):
             order_dir = request.GET.get('order[0][dir]', 'asc')
 
             # 列名映射（对应DataTable的列顺序和实际MongoDB字段名）
-            columns = ['title', 'type', 'city', 'street', 'building', 'area', 'direct', 'price']
+            columns = ['title', 'rental_type', 'location.city', 'location.street', 'location.building', 'features.area', 'features.direction', 'price.monthly_rent']
             sort_column = columns[order_column] if order_column < len(columns) else 'title'
 
-            # 连接MongoDB
+            # 连接MongoDB（使用开发环境端口27017）
             import pymongo
             client = pymongo.MongoClient('mongodb://localhost:27017/')
             db = client['house_data']
@@ -437,15 +514,15 @@ def mongo_table_data_api(request):
             # 构建查询条件
             query = {}
             if search_value:
-                # 全文搜索
+                # 全文搜索（使用正确的MongoDB字段路径）
                 query = {
                     '$or': [
                         {'title': {'$regex': search_value, '$options': 'i'}},
-                        {'city': {'$regex': search_value, '$options': 'i'}},
-                        {'street': {'$regex': search_value, '$options': 'i'}},
-                        {'building': {'$regex': search_value, '$options': 'i'}},
-                        {'type': {'$regex': search_value, '$options': 'i'}},
-                        {'direct': {'$regex': search_value, '$options': 'i'}}
+                        {'location.city': {'$regex': search_value, '$options': 'i'}},
+                        {'location.street': {'$regex': search_value, '$options': 'i'}},
+                        {'location.building': {'$regex': search_value, '$options': 'i'}},
+                        {'rental_type': {'$regex': search_value, '$options': 'i'}},
+                        {'features.direction': {'$regex': search_value, '$options': 'i'}}
                     ]
                 }
 
@@ -461,47 +538,95 @@ def mongo_table_data_api(request):
             cursor = collection.find(query).sort(sort_spec).skip(start).limit(length)
             data = []
 
-            for doc in cursor:
-                # 处理价格字段，可能是数字或字典
-                price_value = doc.get('price', 0)
-                if isinstance(price_value, dict):
-                    price_str = f"{price_value.get('monthly_rent', 0):.0f}"
+            for i, doc in enumerate(cursor, start=start+1):
+                # 处理嵌套字段
+                location = doc.get('location', {})
+                features = doc.get('features', {})
+                price_info = doc.get('price', {})
+                crawl_meta = doc.get('crawl_meta', {})
+
+                # 处理价格字段
+                if isinstance(price_info, dict):
+                    price_str = f"¥{price_info.get('monthly_rent', 0):.0f}/月"
                 else:
-                    price_str = f"{price_value:.0f}" if isinstance(price_value, (int, float)) else str(price_value)
+                    price_str = f"¥{price_info:.0f}/月" if isinstance(price_info, (int, float)) else str(price_info)
 
                 # 处理面积字段
-                area_value = doc.get('area', 0)
-                area_str = f"{area_value:.1f}" if isinstance(area_value, (int, float)) else str(area_value)
+                area_value = features.get('area', 0)
+                area_str = f"{area_value:.1f}㎡" if isinstance(area_value, (int, float)) else str(area_value)
+
+                # 处理图片
+                images = doc.get('images', [])
+                if images and len(images) > 0:
+                    image_html = f'<img src="{images[0]}" alt="房源图片" style="max-width: 50px; max-height: 50px; border-radius: 4px;" onerror="this.src=\'/static/picture/no-image.png\'; this.onerror=null;" loading="lazy">'
+                else:
+                    image_html = '<img src="/static/picture/no-image.png" alt="暂无图片" style="max-width: 50px; max-height: 50px; border-radius: 4px;">'
+
+                # 处理标签
+                tags = doc.get('tags', [])
+                if tags:
+                    tags_html = ''.join([f'<span class="label label-info">{tag}</span> ' for tag in tags[:3]])
+                else:
+                    tags_html = '<span class="text-muted">无标签</span>'
+
+                # 生成操作按钮HTML
+                house_id = str(doc.get('_id', ''))
+                source_url = crawl_meta.get('source_url', '#') if isinstance(crawl_meta, dict) else '#'
+                actions_html = f'''
+                    <a target="_blank" href="{source_url}" class="btn btn-info btn-sm">房源详情</a>
+                    <a href="/mongo/addHistory/{house_id}" class="btn btn-danger btn-sm" onclick="return confirm('确定要收藏这个房源吗？')">收藏房源</a>
+                '''
 
                 row = [
-                    doc.get('title', ''),
-                    doc.get('type', ''),
-                    doc.get('city', ''),
-                    doc.get('street', ''),
-                    doc.get('building', ''),
-                    area_str,
-                    doc.get('direct', ''),
-                    price_str
+                    i,  # 编号
+                    image_html,  # 图片
+                    doc.get('title', ''),  # 房源名称
+                    doc.get('rental_type', ''),  # 房源类型
+                    location.get('building', ''),  # 房源布局/地址
+                    tags_html,  # 标签
+                    location.get('city', ''),  # 行政区
+                    location.get('street', ''),  # 街道
+                    area_str,  # 房源面积
+                    features.get('direction', '未知'),  # 朝向
+                    price_str,  # 价钱
+                    actions_html  # 操作
                 ]
                 data.append(row)
         except:
-            # MongoDB查询失败，使用降级数据
-            from .fallback_data import FALLBACK_HOUSES
+            # MongoDB查询失败，使用10K降级数据
+            from .fallback_data_10k import FALLBACK_HOUSES_10K
 
-            total_records = len(FALLBACK_HOUSES)
+            total_records = len(FALLBACK_HOUSES_10K)
             filtered_records = total_records
 
             data = []
-            for house in FALLBACK_HOUSES[:length]:
+            for i, house in enumerate(FALLBACK_HOUSES_10K[:length], start=start+1):
+                # 处理图片
+                image_html = '<img src="/static/picture/no-image.png" alt="暂无图片" style="max-width: 50px; max-height: 50px; border-radius: 4px;">'
+
+                # 处理标签
+                tags_html = '<span class="text-muted">无标签</span>'
+
+                # 生成操作按钮HTML（降级模式使用索引作为ID）
+                house_id = f"fallback_{i}"
+                actions_html = f'''
+                    <a target="_blank" href="#" class="btn btn-info btn-sm">房源详情</a>
+                    <a href="/mongo/addHistory/{house_id}" class="btn btn-danger btn-sm" onclick="return confirm('确定要收藏这个房源吗？')">收藏房源</a>
+                '''
+
                 row = [
-                    house['title'],
-                    house['rental_type'],
-                    house['city'],
-                    house['street'],
-                    house['building'],
-                    f"{house['area']:.1f}",
-                    house['orientation'],
-                    f"{house['price']:.0f}"
+                    i,  # 编号
+                    image_html,  # 图片
+                    house['title'],  # 房源名称
+                    house['rental_type'],  # 房源类型
+                    house['building'],  # 房源布局/地址
+                    tags_html,  # 标签
+                    house['city'],  # 行政区
+                    house['street'],  # 街道
+                    f"{house['area']:.1f}㎡",  # 房源面积
+                    house['orientation'],  # 朝向
+                    f"¥{house['price']:.0f}/月",  # 价钱
+                    actions_html  # 操作
                 ]
                 data.append(row)
 
@@ -528,19 +653,19 @@ def mongo_history_table_data(request):
     fallback_mode = request.session.get('fallback_mode', False)
 
     if fallback_mode:
-        # 降级模式：使用模拟收藏数据
-        from .fallback_data import FallbackMongoUser, FALLBACK_HOUSES
+        # 降级模式：使用10K模拟收藏数据
+        from .fallback_data_10k import FallbackMongoUser, FALLBACK_HOUSES_10K
 
         user = FallbackMongoUser.objects(username=username).first()
 
         # 模拟收藏历史
         history_data = [
             {
-                'house': FALLBACK_HOUSES[0],
+                'house': FALLBACK_HOUSES_10K[0],
                 'collected_time': '2025-06-23 10:00:00'
             },
             {
-                'house': FALLBACK_HOUSES[1],
+                'house': FALLBACK_HOUSES_10K[1],
                 'collected_time': '2025-06-22 15:30:00'
             }
         ]
@@ -561,13 +686,13 @@ def mongo_history_table_data(request):
             else:
                 history_data = []
         except:
-            # MongoDB查询失败，使用降级数据
-            from .fallback_data import FallbackMongoUser, FALLBACK_HOUSES
+            # MongoDB查询失败，使用10K降级数据
+            from .fallback_data_10k import FallbackMongoUser, FALLBACK_HOUSES_10K
 
             user = FallbackMongoUser.objects(username=username).first()
             history_data = [
                 {
-                    'house': FALLBACK_HOUSES[0],
+                    'house': FALLBACK_HOUSES_10K[0],
                     'collected_time': '2025-06-23 10:00:00'
                 }
             ]
@@ -584,7 +709,18 @@ def mongo_history_table_data(request):
 
 # MongoDB版本的添加收藏
 def mongo_add_history(request, house_id):
-    username = request.session.get("mongo_username").get('username')
+    # 检查用户是否已登录
+    if 'mongo_username' not in request.session:
+        return redirect('mongo_login')
+
+    mongo_user_info = request.session.get("mongo_username")
+    if not mongo_user_info or not isinstance(mongo_user_info, dict):
+        return redirect('mongo_login')
+
+    username = mongo_user_info.get('username')
+    if not username:
+        return redirect('mongo_login')
+
     user = MongoUser.objects(username=username).first()
     house = HouseDocument.objects(id=house_id).first()
 
@@ -608,19 +744,19 @@ def mongo_house_distribute(request):
     fallback_mode = request.session.get('fallback_mode', False)
 
     if fallback_mode:
-        # 降级模式：使用模拟数据
-        from .fallback_data import FALLBACK_HOUSES, get_fallback_stats
+        # 降级模式：使用10K模拟数据
+        from .fallback_data_10k import FALLBACK_HOUSES_10K, get_fallback_stats_10k
 
-        stats = get_fallback_stats()
+        stats = get_fallback_stats_10k()
         types = stats['rental_types']
         defaultType = '不限'
         type_name = request.GET.get('type_name')
 
         # 过滤数据
-        filtered_houses = FALLBACK_HOUSES
+        filtered_houses = FALLBACK_HOUSES_10K
         if type_name and type_name in types:
             defaultType = type_name
-            filtered_houses = [h for h in FALLBACK_HOUSES if h['rental_type'] == type_name]
+            filtered_houses = [h for h in FALLBACK_HOUSES_10K if h['rental_type'] == type_name]
 
         # 城市分布统计
         city_count = {}
@@ -683,17 +819,17 @@ def mongo_house_distribute(request):
             result2 = [{'value': item['count'], 'name': item['_id']} for item in street_data]
 
         except:
-            # MongoDB查询失败，使用降级数据
-            from .fallback_data import FALLBACK_HOUSES, get_fallback_stats
+            # MongoDB查询失败，使用10K降级数据
+            from .fallback_data_10k import FALLBACK_HOUSES_10K, get_fallback_stats_10k
 
-            stats = get_fallback_stats()
+            stats = get_fallback_stats_10k()
             types = stats['rental_types']
             defaultType = '不限'
 
-            # 使用500条降级数据生成真实的图表数据
-            filtered_houses = FALLBACK_HOUSES
+            # 使用10K条降级数据生成真实的图表数据
+            filtered_houses = FALLBACK_HOUSES_10K
             if type_name and type_name != '不限':
-                filtered_houses = [h for h in FALLBACK_HOUSES if h.get('rental_type') == type_name]
+                filtered_houses = [h for h in FALLBACK_HOUSES_10K if h.get('rental_type') == type_name]
 
             # 区域分布统计
             district_count = {}
@@ -735,40 +871,98 @@ def mongo_type_in_city(request):
     fallback_mode = request.session.get('fallback_mode', False)
 
     if fallback_mode:
-        # 降级模式：使用模拟数据
-        from .fallback_data import FALLBACK_HOUSES
+        # 降级模式：使用10K模拟数据
+        from .fallback_data_10k import FALLBACK_HOUSES_10K
 
-        # 统计房型分布
-        type_count = {}
-        for house in FALLBACK_HOUSES:
-            rental_type = house['rental_type']
-            type_count[rental_type] = type_count.get(rental_type, 0) + 1
+        # 获取所有独特的房源类型
+        types = list(set([house['rental_type'] for house in FALLBACK_HOUSES_10K]))
+        # 获取所有独特的城市
+        cities = list(set([house['city'] for house in FALLBACK_HOUSES_10K]))
 
-        result = [{'name': rental_type, 'value': count} for rental_type, count in type_count.items()]
+        # 创建一个字典来存储房源类型和城市的计数
+        house_counts = {}
+        # 初始化字典，为每种房源类型创建一个与城市数量相同的列表，初始值为0
+        for type_ in types:
+            house_counts[type_] = [0] * len(cities)
+
+        # 统计每种类型在每个城市的数量
+        for house in FALLBACK_HOUSES_10K:
+            type_ = house['rental_type']
+            city = house['city']
+            if type_ in types and city in cities:
+                city_index = cities.index(city)
+                house_counts[type_][city_index] += 1
+
+        # 将字典转换为嵌套列表
+        result = [house_counts[type_] for type_ in sorted(types)]
 
     else:
         try:
-            # 正常模式：使用MongoDB数据
-            type_distribution = MongoQueryHelper.get_type_distribution()
+            # 正常模式：使用MongoDB数据，模仿MySQL版本的逻辑
+            from pymongo import MongoClient
+            client = MongoClient('mongodb://localhost:27017/')
+            db = client['house_data']
 
-            # 格式化数据为ECharts格式
-            result = []
-            for item in type_distribution:
-                result.append({
-                    'name': item['_id'] or '未知',
-                    'value': item['count']
-                })
-        except:
-            # MongoDB查询失败，使用降级数据
-            result = [
-                {'name': '整租', 'value': 3},
-                {'name': '合租', 'value': 2}
+            # 获取所有独特的房源类型
+            types = [t for t in db.houses.distinct('rental_type') if t]
+            # 获取所有独特的城市
+            cities = [c for c in db.houses.distinct('location.city') if c]
+
+            # 创建一个字典来存储房源类型和城市的计数
+            house_counts = {}
+            # 初始化字典，为每种房源类型创建一个与城市数量相同的列表，初始值为0
+            for type_ in types:
+                house_counts[type_] = [0] * len(cities)
+
+            # 使用聚合查询获取每种类型在每个城市的计数
+            pipeline = [
+                {
+                    '$group': {
+                        '_id': {
+                            'type': '$rental_type',
+                            'city': '$location.city'
+                        },
+                        'count': {'$sum': 1}
+                    }
+                }
             ]
 
+            annotated_houses = list(db.houses.aggregate(pipeline))
+
+            # 填充字典
+            for ah in annotated_houses:
+                type_ = ah['_id']['type']
+                city = ah['_id']['city']
+                count = ah['count']
+
+                if type_ in types and city in cities:
+                    # 找到城市在城市列表中的索引
+                    city_index = cities.index(city)
+                    # 更新房源类型的城市计数
+                    house_counts[type_][city_index] = count
+
+            # 将字典转换为嵌套列表
+            result = [house_counts[type_] for type_ in sorted(types)]
+
+            client.close()
+        except Exception as e:
+            # MongoDB查询失败，使用降级数据
+            types = ['整租', '合租', '单间']
+            cities = ['广州', '深圳', '佛山']
+            house_counts = {
+                '整租': [5, 3, 2],
+                '合租': [3, 2, 1],
+                '单间': [2, 1, 1]
+            }
+            result = [house_counts[type_] for type_ in sorted(types)]
+
     context = {
+        'house_counts': house_counts,
         'username': username,
         'useravatar': useravatar,
-        'result': json.dumps(result),
+        'types': types,
+        'cities': cities,
+        'result': result,
         'database_type': 'MongoDB (演示模式)' if fallback_mode else 'MongoDB',
         'fallback_mode': fallback_mode
     }
@@ -843,83 +1037,178 @@ def mongo_house_type_rank(request):
 
     username = request.session['mongo_username'].get('username')
     useravatar = request.session['mongo_username'].get('avatar')
-    fallback_mode = request.session.get('fallback_mode', False)
+    fallback_mode = False  # 使用正常模式，与tableData保持一致
 
     if fallback_mode:
         # 降级模式：使用模拟数据
         from .fallback_data import FALLBACK_HOUSES
 
-        # 统计房型价格
-        type_stats = {}
+        # 获取所有城市
+        cities = list(set([house.get('city', '广州') for house in FALLBACK_HOUSES]))
+        citylist = cities
+
+        # 获取选择的城市名称
+        cityname = request.GET.get("cityname", "不限")
+        defaultType = cityname if cityname in citylist else "不限"
+
+        # 统计房型数量，获取前3种最常见的房源类型
+        type_count = {}
         for house in FALLBACK_HOUSES:
-            rental_type = house['rental_type']
-            price = house['price']
-            if rental_type not in type_stats:
-                type_stats[rental_type] = {'prices': [], 'count': 0}
-            type_stats[rental_type]['prices'].append(price)
-            type_stats[rental_type]['count'] += 1
+            rental_type = house.get('rental_type', '整租')
+            type_count[rental_type] = type_count.get(rental_type, 0) + 1
 
-        # 计算平均价格并排序
-        type_rank_data = []
-        for rental_type, stats in type_stats.items():
-            avg_price = sum(stats['prices']) / len(stats['prices'])
-            type_rank_data.append({
-                'type': rental_type,
-                'avg_price': avg_price,
-                'count': stats['count']
-            })
+        # 按数量排序，取前3
+        sorted_types = sorted(type_count.items(), key=lambda x: x[1], reverse=True)[:3]
+        list_top_three = [item[0] for item in sorted_types]
 
-        type_rank_data.sort(key=lambda x: x['avg_price'], reverse=True)
+        # 初始化数据列表
+        list1_legend = []
+        list1 = []
+        list2_legend = []
+        list2 = []
+        list3_legend = []
+        list3 = []
 
-        types = [item['type'] for item in type_rank_data]
-        avg_prices = [round(item['avg_price'], 2) for item in type_rank_data]
-        counts = [item['count'] for item in type_rank_data]
+        # 为每种房型生成数据
+        for i, house_type in enumerate(list_top_three):
+            # 筛选该房型的房源
+            filtered_houses = [house for house in FALLBACK_HOUSES
+                             if house.get('rental_type') == house_type]
+
+            # 如果选择了特定城市，进一步筛选
+            if cityname != "不限":
+                filtered_houses = [house for house in filtered_houses
+                                 if house.get('city') == cityname]
+
+            # 按价格排序，取前10
+            filtered_houses.sort(key=lambda x: x.get('price', 0), reverse=True)
+            top_houses = filtered_houses[:10]
+
+            if i == 0:  # 第一种类型
+                for house in top_houses:
+                    title = house.get('title', f"{house_type}房源")
+                    price = house.get('price', 0)
+                    list1_legend.append(title)
+                    list1.append({'value': price, 'name': title})
+            elif i == 1:  # 第二种类型
+                for house in top_houses:
+                    title = house.get('title', f"{house_type}房源")
+                    price = house.get('price', 0)
+                    list2_legend.append(title)
+                    list2.append({'value': price, 'name': title})
+            elif i == 2:  # 第三种类型
+                for house in top_houses:
+                    title = house.get('title', f"{house_type}房源")
+                    price = house.get('price', 0)
+                    list3_legend.append(title)
+                    list3.append({'value': price, 'name': title})
 
     else:
         try:
-            # 正常模式：使用MongoDB数据
-            pipeline = [
-                {
-                    '$group': {
-                        '_id': '$rental_type',
-                        'avg_price': {'$avg': '$price.monthly_rent'},
-                        'count': {'$sum': 1}
-                    }
-                },
-                {'$sort': {'avg_price': -1}}
+            # 正常模式：使用MongoDB数据，模仿MySQL版本的逻辑
+            print("进入正常模式 - housetyperank")  # 调试信息
+            from pymongo import MongoClient
+            client = MongoClient('mongodb://localhost:27017/')
+            db = client['house_data']
+            print(f"MongoDB连接成功，数据库: {db.name}")  # 调试信息
+
+            # 获取所有唯一的城市
+            cities = db.houses.distinct('location.city')
+            citylist = [city for city in cities if city]  # 过滤空值
+
+            # 获取选择的城市名称
+            cityname = request.GET.get("cityname", "不限")
+            defaultType = cityname if cityname in citylist else "不限"
+
+            # 获取前3种最常见的房源类型
+            type_pipeline = [
+                {'$group': {'_id': '$rental_type', 'count': {'$sum': 1}}},
+                {'$sort': {'count': -1}},
+                {'$limit': 3}
             ]
+            top_types = list(db.houses.aggregate(type_pipeline))
+            print(f"查询到的房型: {top_types}")  # 调试信息
+            list_top_three = [item['_id'] for item in top_types if item['_id']]
 
-            type_rank_data = list(HouseDocument.objects.aggregate(pipeline))
+            # 初始化数据列表
+            list1_legend = []
+            list1 = []
+            list2_legend = []
+            list2 = []
+            list3_legend = []
+            list3 = []
 
-            # 格式化数据
-            types = []
-            avg_prices = []
-            counts = []
+            # 为每种房型生成数据
+            for i, house_type in enumerate(list_top_three):
+                # 构建查询条件
+                match_condition = {'rental_type': house_type}
+                if cityname != "不限":
+                    match_condition['location.city'] = cityname
 
-            for item in type_rank_data:
-                types.append(item['_id'] or '未知')
-                # 处理None值
-                avg_price = item['avg_price']
-                if avg_price is not None:
-                    avg_prices.append(round(avg_price, 2))
-                else:
-                    avg_prices.append(0)
-                counts.append(item['count'])
-        except:
+                # 查询该房型的房源，按价格排序，取前10
+                houses_pipeline = [
+                    {'$match': match_condition},
+                    {'$sort': {'price.monthly_rent': -1}},
+                    {'$limit': 10},
+                    {'$project': {
+                        'title': 1,
+                        'price': '$price.monthly_rent'
+                    }}
+                ]
+
+                houses = list(db.houses.aggregate(houses_pipeline))
+                print(f"房型 {house_type} 查询到 {len(houses)} 个房源")  # 调试信息
+
+                if i == 0:  # 第一种类型
+                    for house in houses:
+                        title = house.get('title', f"{house_type}房源")
+                        price = house.get('price', 0) or 0
+                        list1_legend.append(title)
+                        list1.append({'value': price, 'name': title})
+                elif i == 1:  # 第二种类型
+                    for house in houses:
+                        title = house.get('title', f"{house_type}房源")
+                        price = house.get('price', 0) or 0
+                        list2_legend.append(title)
+                        list2.append({'value': price, 'name': title})
+                elif i == 2:  # 第三种类型
+                    for house in houses:
+                        title = house.get('title', f"{house_type}房源")
+                        price = house.get('price', 0) or 0
+                        list3_legend.append(title)
+                        list3.append({'value': price, 'name': title})
+
+            client.close()
+        except Exception as e:
             # MongoDB查询失败，使用降级数据
-            types = ['整租', '合租']
-            avg_prices = [4500.0, 2000.0]
-            counts = [3, 2]
+            print(f"MongoDB查询失败: {e}")  # 添加调试信息
+            citylist = ['广州', '深圳', '佛山']
+            defaultType = "不限"
+            list_top_three = ['整租', '合租', '单间']
+
+            list1_legend = ['整租房源1', '整租房源2']
+            list1 = [{'value': 4500, 'name': '整租房源1'}, {'value': 4000, 'name': '整租房源2'}]
+            list2_legend = ['合租房源1', '合租房源2']
+            list2 = [{'value': 2500, 'name': '合租房源1'}, {'value': 2000, 'name': '合租房源2'}]
+            list3_legend = ['单间房源1', '单间房源2']
+            list3 = [{'value': 1500, 'name': '单间房源1'}, {'value': 1200, 'name': '单间房源2'}]
 
     context = {
         'username': username,
         'useravatar': useravatar,
-        'types': json.dumps(types),
-        'avg_prices': json.dumps(avg_prices),
-        'counts': json.dumps(counts),
+        'citylist': citylist,
+        'defaultType': defaultType,
+        'list1_legend': list1_legend,
+        'list1': list1,
+        'list2_legend': list2_legend,
+        'list2': list2,
+        'list3_legend': list3_legend,
+        'list3': list3,
+        'list_top_three': list_top_three,
         'database_type': 'MongoDB (演示模式)' if fallback_mode else 'MongoDB',
         'fallback_mode': fallback_mode
     }
+    print(f"最终context数据: list1={len(list1)}, list2={len(list2)}, list3={len(list3)}")  # 调试信息
 
     return render(request, 'mongo/housetyperank.html', context)
 
@@ -931,93 +1220,222 @@ def mongo_service_money(request):
 
     username = request.session['mongo_username'].get('username')
     useravatar = request.session['mongo_username'].get('avatar')
-    fallback_mode = request.session.get('fallback_mode', False)
+    fallback_mode = False  # 使用正常模式，与tableData保持一致
 
     if fallback_mode:
-        # 降级模式：使用500条真实数据
-        from .fallback_data import FALLBACK_HOUSES
+        # 降级模式：使用10K完整数据
+        from .fallback_data_10k import FALLBACK_HOUSES_10K
 
-        # 按面积分组统计价格
-        area_groups = {
-            '30㎡以下': [],
-            '30-50㎡': [],
-            '50-80㎡': [],
-            '80-120㎡': [],
-            '120㎡以上': []
-        }
+        # 1. 面积对价格的影响分析
+        area_price_data = []
+        area_ranges = [(0, 30), (30, 50), (50, 80), (80, 120), (120, 200), (200, 1000)]
+        area_labels = ['30㎡以下', '30-50㎡', '50-80㎡', '80-120㎡', '120-200㎡', '200㎡以上']
 
-        for house in FALLBACK_HOUSES:
-            area = house.get('area', 0)
+        for i, (min_area, max_area) in enumerate(area_ranges):
+            filtered_houses = [
+                house for house in FALLBACK_HOUSES_10K
+                if min_area <= house.get('area', 0) < max_area
+            ]
+            if filtered_houses:
+                avg_price = sum(house.get('price', 0) for house in filtered_houses) / len(filtered_houses)
+                area_price_data.append({
+                    'name': area_labels[i],
+                    'value': round(avg_price, 2),
+                    'count': len(filtered_houses)
+                })
+
+        # 2. 房型对价格的影响分析
+        type_stats = {}
+        for house in FALLBACK_HOUSES_10K:
+            rental_type = house.get('rental_type', '未知')
             price = house.get('price', 0)
+            if rental_type not in type_stats:
+                type_stats[rental_type] = {'prices': [], 'count': 0}
+            type_stats[rental_type]['prices'].append(price)
+            type_stats[rental_type]['count'] += 1
 
-            if area < 30:
-                area_groups['30㎡以下'].append(price)
-            elif area < 50:
-                area_groups['30-50㎡'].append(price)
-            elif area < 80:
-                area_groups['50-80㎡'].append(price)
-            elif area < 120:
-                area_groups['80-120㎡'].append(price)
-            else:
-                area_groups['120㎡以上'].append(price)
+        type_price_data = []
+        for rental_type, stats in type_stats.items():
+            if stats['prices']:
+                avg_price = sum(stats['prices']) / len(stats['prices'])
+                type_price_data.append({
+                    'name': rental_type,
+                    'value': round(avg_price, 2),
+                    'count': stats['count']
+                })
 
-        # 计算平均价格
-        area_ranges = []
-        avg_prices = []
-        for area_range, prices in area_groups.items():
-            if prices:  # 只包含有数据的区间
-                area_ranges.append(area_range)
-                avg_prices.append(round(sum(prices) / len(prices), 2))
+        # 3. 朝向对价格的影响分析
+        direction_stats = {}
+        valid_directions = ['东', '南', '西', '北', '东南', '东北', '西南', '西北', '南北', '东西']
+
+        for house in FALLBACK_HOUSES_10K:
+            direction = house.get('direction', house.get('orientation', '未知'))
+            if direction in valid_directions:
+                price = house.get('price', 0)
+                if direction not in direction_stats:
+                    direction_stats[direction] = {'prices': [], 'count': 0}
+                direction_stats[direction]['prices'].append(price)
+                direction_stats[direction]['count'] += 1
+
+        direction_price_data = []
+        for direction, stats in direction_stats.items():
+            if stats['prices']:
+                avg_price = sum(stats['prices']) / len(stats['prices'])
+                direction_price_data.append({
+                    'name': direction,
+                    'value': round(avg_price, 2),
+                    'count': stats['count']
+                })
+
+        # 按平均价格排序
+        direction_price_data.sort(key=lambda x: x['value'], reverse=True)
+
+        # 4. 城市对价格的影响分析
+        city_stats = {}
+        for house in FALLBACK_HOUSES_10K:
+            city = house.get('city', '未知')
+            price = house.get('price', 0)
+            if city not in city_stats:
+                city_stats[city] = {'prices': [], 'count': 0}
+            city_stats[city]['prices'].append(price)
+            city_stats[city]['count'] += 1
+
+        city_price_data = []
+        for city, stats in city_stats.items():
+            if stats['prices']:
+                avg_price = sum(stats['prices']) / len(stats['prices'])
+                city_price_data.append({
+                    'name': city,
+                    'value': round(avg_price, 2),
+                    'count': stats['count']
+                })
+
+        # 按平均价格排序
+        city_price_data.sort(key=lambda x: x['value'], reverse=True)
+
     else:
         try:
-            # 正常模式：使用MongoDB数据
-            pipeline = [
-                {
-                    '$project': {
-                        'area': '$features.area',
-                        'price': '$price.monthly_rent',
-                        'area_range': {
-                            '$switch': {
-                                'branches': [
-                                    {'case': {'$lt': ['$features.area', 30]}, 'then': '30㎡以下'},
-                                    {'case': {'$lt': ['$features.area', 50]}, 'then': '30-50㎡'},
-                                    {'case': {'$lt': ['$features.area', 80]}, 'then': '50-80㎡'},
-                                    {'case': {'$lt': ['$features.area', 120]}, 'then': '80-120㎡'},
-                                ],
-                                'default': '120㎡以上'
-                            }
-                        }
-                    }
-                },
-                {
-                    '$group': {
-                        '_id': '$area_range',
-                        'avg_price': {'$avg': '$price'},
+            # 正常模式：使用MongoDB数据，模仿MySQL版本的逻辑
+            print("进入正常模式 - servicemoney")  # 调试信息
+            from pymongo import MongoClient
+            client = MongoClient('mongodb://localhost:27017/')
+            db = client['house_data']
+            print(f"MongoDB连接成功，数据库: {db.name}")  # 调试信息
+
+            # 1. 面积对价格的影响分析
+            area_price_data = []
+            area_ranges = [(0, 30), (30, 50), (50, 80), (80, 120), (120, 200), (200, 1000)]
+            area_labels = ['30㎡以下', '30-50㎡', '50-80㎡', '80-120㎡', '120-200㎡', '200㎡以上']
+
+            for i, (min_area, max_area) in enumerate(area_ranges):
+                pipeline = [
+                    {'$match': {'features.area': {'$gte': min_area, '$lt': max_area}}},
+                    {'$group': {
+                        '_id': None,
+                        'avg_price': {'$avg': '$price.monthly_rent'},
                         'count': {'$sum': 1}
-                    }
-                },
-                {'$sort': {'avg_price': 1}}
+                    }}
+                ]
+                result = list(db.houses.aggregate(pipeline))
+                if result and result[0]['avg_price']:
+                    area_price_data.append({
+                        'name': area_labels[i],
+                        'value': round(result[0]['avg_price'], 2),
+                        'count': result[0]['count']
+                    })
+
+            # 2. 房型对价格的影响分析
+            type_pipeline = [
+                {'$group': {
+                    '_id': '$rental_type',
+                    'avg_price': {'$avg': '$price.monthly_rent'},
+                    'count': {'$sum': 1}
+                }},
+                {'$sort': {'avg_price': -1}}
             ]
+            type_results = list(db.houses.aggregate(type_pipeline))
+            type_price_data = []
+            for item in type_results:
+                if item['_id'] and item['avg_price']:
+                    type_price_data.append({
+                        'name': item['_id'],
+                        'value': round(item['avg_price'], 2),
+                        'count': item['count']
+                    })
 
-            area_price_data = list(HouseDocument.objects.aggregate(pipeline))
+            # 3. 朝向对价格的影响分析
+            valid_directions = ['东', '南', '西', '北', '东南', '东北', '西南', '西北', '南北', '东西']
+            direction_pipeline = [
+                {'$match': {'features.direction': {'$regex': '东|南|西|北'}}},
+                {'$group': {
+                    '_id': '$features.direction',
+                    'avg_price': {'$avg': '$price.monthly_rent'},
+                    'count': {'$sum': 1}
+                }},
+                {'$sort': {'avg_price': -1}}
+            ]
+            direction_results = list(db.houses.aggregate(direction_pipeline))
+            direction_price_data = []
+            for item in direction_results:
+                if item['_id'] and item['avg_price']:
+                    direction_price_data.append({
+                        'name': item['_id'],
+                        'value': round(item['avg_price'], 2),
+                        'count': item['count']
+                    })
 
-            # 格式化数据
-            area_ranges = []
-            avg_prices = []
+            # 4. 城市对价格的影响分析
+            city_pipeline = [
+                {'$group': {
+                    '_id': '$location.city',
+                    'avg_price': {'$avg': '$price.monthly_rent'},
+                    'count': {'$sum': 1}
+                }},
+                {'$sort': {'avg_price': -1}}
+            ]
+            city_results = list(db.houses.aggregate(city_pipeline))
+            city_price_data = []
+            for item in city_results:
+                if item['_id'] and item['avg_price']:
+                    city_price_data.append({
+                        'name': item['_id'],
+                        'value': round(item['avg_price'], 2),
+                        'count': item['count']
+                    })
 
-            for item in area_price_data:
-                area_ranges.append(item['_id'])
-                avg_prices.append(round(item['avg_price'], 2))
-        except:
+            client.close()
+        except Exception as e:
             # MongoDB查询失败，使用降级数据
-            area_ranges = ['30㎡以下', '30-50㎡', '50-80㎡', '80-120㎡', '120㎡以上']
-            avg_prices = [1500, 2500, 3500, 5000, 7000]
+            print(f"MongoDB查询失败 (servicemoney): {e}")  # 添加调试信息
+            area_price_data = [
+                {'name': '30㎡以下', 'value': 1500, 'count': 10},
+                {'name': '30-50㎡', 'value': 2500, 'count': 20},
+                {'name': '50-80㎡', 'value': 3500, 'count': 30},
+                {'name': '80-120㎡', 'value': 5000, 'count': 25},
+                {'name': '120-200㎡', 'value': 7000, 'count': 15}
+            ]
+            type_price_data = [
+                {'name': '整租', 'value': 4500, 'count': 50},
+                {'name': '合租', 'value': 2500, 'count': 30}
+            ]
+            direction_price_data = [
+                {'name': '南', 'value': 4000, 'count': 20},
+                {'name': '东南', 'value': 3800, 'count': 15},
+                {'name': '东', 'value': 3500, 'count': 18}
+            ]
+            city_price_data = [
+                {'name': '广州', 'value': 4000, 'count': 40},
+                {'name': '深圳', 'value': 5500, 'count': 30},
+                {'name': '佛山', 'value': 3000, 'count': 20}
+            ]
 
     context = {
         'username': username,
         'useravatar': useravatar,
-        'area_ranges': json.dumps(area_ranges),
-        'avg_prices': json.dumps(avg_prices),
+        'area_price_data': area_price_data,
+        'type_price_data': type_price_data,
+        'direction_price_data': direction_price_data,
+        'city_price_data': city_price_data,
         'database_type': 'MongoDB (演示模式)' if fallback_mode else 'MongoDB',
         'fallback_mode': fallback_mode
     }
@@ -1032,7 +1450,7 @@ def mongo_heatmap_analysis(request):
 
     username = request.session['mongo_username'].get('username')
     useravatar = request.session['mongo_username'].get('avatar')
-    fallback_mode = request.session.get('fallback_mode', False)
+    fallback_mode = False  # 使用正常模式，与其他页面保持一致
 
     if fallback_mode:
         # 降级模式：使用500条真实数据
@@ -1111,15 +1529,106 @@ def mongo_heatmap_analysis(request):
             area_price_pipeline = [
                 {
                     '$project': {
-                        'area': '$area',
-                        'price': '$price'
+                        'area': '$features.area',
+                        'price': '$price.monthly_rent'
                     }
                 },
+                {'$match': {'area': {'$gt': 0}, 'price': {'$gt': 0}}},
                 {'$limit': 1000}  # 限制数据量以提高性能
             ]
 
             area_price_raw = list(HouseDocument.objects.aggregate(area_price_pipeline))
             area_price_data = [[float(item['area']), float(item['price'])] for item in area_price_raw if item.get('area') and item.get('price')]
+
+            # 获取面积-朝向热力图数据
+            area_direct_pipeline = [
+                {
+                    '$project': {
+                        'area': '$features.area',
+                        'direction': '$features.direction',
+                        'price': '$price.monthly_rent'
+                    }
+                },
+                {
+                    '$match': {
+                        'area': {'$gt': 0},
+                        'direction': {'$regex': '东|南|西|北'},
+                        'price': {'$gt': 0}
+                    }
+                }
+            ]
+
+            area_direct_raw = list(HouseDocument.objects.aggregate(area_direct_pipeline))
+
+            # 定义面积区间和朝向
+            area_ranges = [(0, 30), (30, 50), (50, 80), (80, 120), (120, 200)]
+            directions = ['南', '北', '东', '西', '东南', '西南', '东北', '西北']
+
+            # 计算面积-朝向组合的平均价格
+            area_direct_price = []
+            for area_idx, (min_area, max_area) in enumerate(area_ranges):
+                for direct_idx, direction in enumerate(directions):
+                    # 筛选符合条件的房源
+                    matching_prices = []
+                    for item in area_direct_raw:
+                        area = item.get('area', 0)
+                        item_direction = item.get('direction', '')
+                        price = item.get('price', 0)
+
+                        if (min_area <= area < max_area and
+                            direction in item_direction and
+                            price > 0):
+                            matching_prices.append(price)
+
+                    # 计算平均价格
+                    if matching_prices:
+                        avg_price = sum(matching_prices) / len(matching_prices)
+                        area_direct_price.append([area_idx, direct_idx, round(avg_price, 2)])
+
+            print(f"生成了{len(area_direct_price)}个面积-朝向数据点")  # 调试信息
+
+            # 获取城市-户型热力图数据
+            city_type_pipeline = [
+                {
+                    '$project': {
+                        'city': '$location.city',
+                        'rental_type': '$rental_type',
+                        'price': '$price.monthly_rent'
+                    }
+                },
+                {
+                    '$match': {
+                        'city': {'$ne': None},
+                        'rental_type': {'$ne': None},
+                        'price': {'$gt': 0}
+                    }
+                }
+            ]
+
+            city_type_raw = list(HouseDocument.objects.aggregate(city_type_pipeline))
+
+            # 获取前5个城市和前3种房型
+            cities = list(set([item['city'] for item in city_type_raw if item.get('city')]))[:5]
+            rental_types = ['整租', '单间', '合租']
+
+            # 计算城市-房型组合的平均价格
+            city_type_price = []
+            for city_idx, city in enumerate(cities):
+                for type_idx, rental_type in enumerate(rental_types):
+                    # 筛选符合条件的房源
+                    matching_prices = []
+                    for item in city_type_raw:
+                        if (item.get('city') == city and
+                            item.get('rental_type') == rental_type and
+                            item.get('price', 0) > 0):
+                            matching_prices.append(item['price'])
+
+                    # 计算平均价格
+                    if matching_prices:
+                        avg_price = sum(matching_prices) / len(matching_prices)
+                        city_type_price.append([city_idx, type_idx, round(avg_price, 2)])
+
+            print(f"生成了{len(city_type_price)}个城市-房型数据点")  # 调试信息
         except:
             # MongoDB查询失败，使用降级数据
             cities = ['广州', '深圳']
@@ -1135,12 +1644,12 @@ def mongo_heatmap_analysis(request):
         'username': username,
         'useravatar': useravatar,
         'cities': json.dumps(cities),
-        'types': json.dumps(types),
+        'types': json.dumps(rental_types),
         'city_type_price': json.dumps(city_type_price),
         'area_price_data': json.dumps(area_price_data),
         'directs': json.dumps(['南', '北', '东', '西', '东南', '西南', '东北', '西北']),
         'area_ranges': json.dumps([['0', '30'], ['30', '50'], ['50', '80'], ['80', '120'], ['120', '200']]),
-        'area_direct_price': json.dumps([]),  # 简化版本，可以后续完善
+        'area_direct_price': json.dumps(area_direct_price),
         'database_type': 'MongoDB (演示模式)' if fallback_mode else 'MongoDB',
         'fallback_mode': fallback_mode
     }

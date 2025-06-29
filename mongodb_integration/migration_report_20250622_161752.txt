@@ -1,5 +1,0 @@
-数据迁移报告
-迁移时间: 2025-06-22 16:17:51
-总耗时: 0.3 秒
-
-迁移结果: {'users': {'success': True, 'migrated_count': 10, 'total_count': 10}, 'houses': {'success': False, 'error': 'No house data found'}, 'history': {'success': True, 'migrated_count': 0, 'total_count': 0}, 'indexes': {'success': True, 'message': 'All indexes created successfully'}, 'integrity': {'success': True, 'users': 10, 'houses': 0, 'history': 0}}

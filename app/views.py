@@ -1,5 +1,6 @@
 # enconding='utf-8'
 import time
+import numpy as np
 from collections import defaultdict
 from django.shortcuts import render, redirect
 from app.models import House, User, Histroy
@@ -213,56 +214,80 @@ def houseDistribute(request):
 def housetyperank(request):
     username = request.session['username'].get('username')
     useravatar = request.session['username'].get('avatar')
-    list1_legend=[];list1=[];list2_legend=[];list2=[];list3_legend=[];list3=[]
+
     # 查询数据库，获取所有唯一的城市
     cities = House.objects.values_list('city', flat=True).distinct()
-    # 将城市放入列表中
     citylist = list(cities)
-    cityname=request.GET.get("cityname")
+
+    # 获取选择的城市名称
+    cityname = request.GET.get("cityname", "不限")
+    defaultType = cityname if cityname in citylist else "不限"
+
+    # 获取前3种最常见的房源类型
     top_3_types = House.objects.values('type').annotate(type_count=Count('type')).order_by('-type_count')[:3]
-    # 如果需要返回具体的类型和数量，可以这样做：
-    result = [{'type': item['type'], 'count': item['type_count']} for item in top_3_types]
-    list_top_three = []
-    for i in result:
-        list_top_three.append(i['type'])
-    if cityname !='不限':
-        type1house=House.objects.filter(city=cityname).filter(type=list_top_three[0]).distinct().order_by('-price')[:5]
-        type2house=House.objects.filter(city=cityname).filter(type=list_top_three[1]).distinct().order_by('-price')[:5]
-        type3house=House.objects.filter(city=cityname).filter(type=list_top_three[2]).distinct().order_by('-price')[:5]
-        for p in type1house:
-            if p.title in list1_legend:
-                pass
-            else:
-                list1_legend.append(p.title)
-                list1.append({'value':p.price,'name':p.title})
-        for p in type2house:
-            if p.title in list2_legend:
-                pass
-            else:
-                list2_legend.append(p.title)
-                list2.append({'value':p.price,'name':p.title})
-        for p in type3house:
-            if p.title in list3_legend:
-                pass
-            else:
-                list3_legend.append(p.title)
-                list3.append({'value':p.price,'name':p.title})
-        context={'username':username,'useravatar':useravatar,'citylist':citylist,'list1_legend':list1_legend,'list1':list1,'list2_legend':list2_legend,'list2':list2,'list3_legend':list3_legend,'list3':list3}
-    if cityname not in citylist:
-        type1house=House.objects.all().filter(type=list_top_three[0]).order_by('-price')[:10]
-        type2house=House.objects.all().filter(type=list_top_three[1]).order_by('-price')[:10]
-        type3house=House.objects.all().filter(type=list_top_three[2]).order_by('-price')[:10]
-        for p in type1house:
-            list1_legend.append(p.title)
-            list1.append({'value':p.price,'name':p.title})
-        for p in type2house:
-            list2_legend.append(p.title)
-            list2.append({'value':p.price,'name':p.title})
-        for p in type3house:
-            list3_legend.append(p.title)
-            list3.append({'value':p.price,'name':p.title})
-        context = {'username': username, 'useravatar': useravatar, 'citylist': citylist, 'list1_legend': list1_legend,'list1': list1, 'list2_legend': list2_legend, 'list2': list2,
-                   'list3_legend': list3_legend,'list3': list3,'list_top_three': list_top_three}
+    list_top_three = [item['type'] for item in top_3_types]
+
+    # 初始化数据列表
+    list1_legend = []
+    list1 = []
+    list2_legend = []
+    list2 = []
+    list3_legend = []
+    list3 = []
+
+    # 根据选择的城市筛选数据
+    if cityname != "不限" and cityname in citylist:
+        # 特定城市的数据
+        for i, house_type in enumerate(list_top_three):
+            houses = House.objects.filter(city=cityname, type=house_type).order_by('-price')[:10]
+
+            if i == 0:  # 第一种类型
+                for house in houses:
+                    if house.title not in list1_legend:
+                        list1_legend.append(house.title)
+                        list1.append({'value': house.price, 'name': house.title})
+            elif i == 1:  # 第二种类型
+                for house in houses:
+                    if house.title not in list2_legend:
+                        list2_legend.append(house.title)
+                        list2.append({'value': house.price, 'name': house.title})
+            elif i == 2:  # 第三种类型
+                for house in houses:
+                    if house.title not in list3_legend:
+                        list3_legend.append(house.title)
+                        list3.append({'value': house.price, 'name': house.title})
+    else:
+        # 全部城市的数据
+        for i, house_type in enumerate(list_top_three):
+            houses = House.objects.filter(type=house_type).order_by('-price')[:10]
+
+            if i == 0:  # 第一种类型
+                for house in houses:
+                    list1_legend.append(house.title)
+                    list1.append({'value': house.price, 'name': house.title})
+            elif i == 1:  # 第二种类型
+                for house in houses:
+                    list2_legend.append(house.title)
+                    list2.append({'value': house.price, 'name': house.title})
+            elif i == 2:  # 第三种类型
+                for house in houses:
+                    list3_legend.append(house.title)
+                    list3.append({'value': house.price, 'name': house.title})
+
+    context = {
+        'username': username,
+        'useravatar': useravatar,
+        'citylist': citylist,
+        'defaultType': defaultType,
+        'list1_legend': list1_legend,
+        'list1': list1,
+        'list2_legend': list2_legend,
+        'list2': list2,
+        'list3_legend': list3_legend,
+        'list3': list3,
+        'list_top_three': list_top_three
+    }
+
     return render(request, 'housetyperank.html', context)
 
 def housewordcloud(request):
@@ -274,6 +299,10 @@ def housewordcloud(request):
     return render(request,'housewordcloud.html',context)
 
 def typeincity(request):
+    # 检查用户是否已登录
+    if 'username' not in request.session:
+        return redirect('login')
+
     username = request.session['username'].get('username')
     useravatar = request.session['username'].get('avatar')
 
@@ -308,39 +337,90 @@ def servicemoney(request):
     useravatar = request.session['username'].get('avatar')
 
     # 获取所有房源数据
-    houses = House.objects.all().distinct()
-    cities = list(House.objects.values_list('city', flat=True).distinct())
+    houses = House.objects.all()
 
-    # 计算每个城市每种房源类型的平均价格
-    avg_prices = defaultdict(lambda: defaultdict(list))
+    # 1. 面积对价格的影响分析
+    area_price_data = []
+    area_ranges = [(0, 30), (30, 50), (50, 80), (80, 120), (120, 200), (200, 1000)]
+    area_labels = ['30㎡以下', '30-50㎡', '50-80㎡', '80-120㎡', '120-200㎡', '200㎡以上']
 
-    for house in houses:
-        avg_prices[house.city][house.type].append(house.price)
+    for i, (min_area, max_area) in enumerate(area_ranges):
+        filtered_houses = houses.filter(area__gte=min_area, area__lt=max_area)
+        if filtered_houses.exists():
+            avg_price = filtered_houses.aggregate(avg_price=Avg('price'))['avg_price']
+            area_price_data.append({
+                'name': area_labels[i],
+                'value': round(avg_price, 2) if avg_price else 0,
+                'count': filtered_houses.count()
+            })
 
-    # 计算平均值
-    for city, types in avg_prices.items():
-        for house_type, prices in types.items():
-            avg_prices[city][house_type] = round(sum(prices) / len(prices),2)
-    # 准备 yAxis 和 series 数据
-    yAxis_data = list(avg_prices.keys())
-    series = []
+    # 2. 房型对价格的影响分析
+    type_price_data = []
+    house_types = houses.values('type').annotate(
+        avg_price=Avg('price'),
+        count=Count('id')
+    ).order_by('-avg_price')
 
-    for house_type in set(house.type for house in houses):
-        series_data = [avg_prices[city][house_type] if house_type in avg_prices[city] else 0 for city in yAxis_data]
-        series.append({
-            'name': house_type,
-            'type': 'bar',
-            'stack': 'total',
-            'label': {
-                'show': 'true'
-            },
-            'emphasis': {
-                'focus': 'series'
-            },
-            'data': series_data
+    for type_data in house_types:
+        type_price_data.append({
+            'name': type_data['type'],
+            'value': round(type_data['avg_price'], 2),
+            'count': type_data['count']
         })
-    context = {'username': username, 'useravatar':useravatar, 'series': series,'cities': cities}
-    return render(request, 'servicemoney.html',context)
+
+    # 3. 朝向对价格的影响分析
+    direction_price_data = []
+    directions = houses.values('direct').annotate(
+        avg_price=Avg('price'),
+        count=Count('id')
+    ).order_by('-avg_price')
+
+    for dir_data in directions:
+        if dir_data['direct']:  # 排除空值
+            direction_price_data.append({
+                'name': dir_data['direct'],
+                'value': round(dir_data['avg_price'], 2),
+                'count': dir_data['count']
+            })
+
+    # 4. 城市对价格的影响分析
+    city_price_data = []
+    cities = houses.values('city').annotate(
+        avg_price=Avg('price'),
+        count=Count('id')
+    ).order_by('-avg_price')
+
+    for city_data in cities:
+        city_price_data.append({
+            'name': city_data['city'],
+            'value': round(city_data['avg_price'], 2),
+            'count': city_data['count']
+        })
+
+    # 5. 综合影响因素分析（相关性分析）
+    correlation_data = []
+
+    # 计算面积与价格的相关性
+    areas = [house.area for house in houses if house.area]
+    prices = [house.price for house in houses if house.area]
+    if len(areas) > 1:
+        area_corr = np.corrcoef(areas, prices)[0, 1]
+        correlation_data.append({
+            'factor': '面积',
+            'correlation': round(area_corr, 3),
+            'impact': '正相关' if area_corr > 0 else '负相关'
+        })
+
+    context = {
+        'username': username,
+        'useravatar': useravatar,
+        'area_price_data': area_price_data,
+        'type_price_data': type_price_data,
+        'direction_price_data': direction_price_data,
+        'city_price_data': city_price_data,
+        'correlation_data': correlation_data
+    }
+    return render(request, 'servicemoney.html', context)
 
 
 def train_house_model(request):

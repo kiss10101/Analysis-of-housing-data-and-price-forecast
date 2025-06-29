@@ -12,25 +12,41 @@
 ### 目录结构详解
 
 #### 1. 核心Django配置 (`Python租房房源数据可视化分析/`)
-- `settings.py` - 项目配置
-- `urls.py` - 主URL路由
+- `settings.py` - 项目配置 (双数据库配置)
+- `urls.py` - 主URL路由 (双版本路由)
 - `wsgi.py` - WSGI部署配置
 - `asgi.py` - ASGI异步配置
 
-#### 2. 主应用模块 (`app/`)
-- `models.py` - 数据模型定义
-- `views.py` - 视图逻辑
-- `urls.py` - 应用URL路由
+#### 2. MySQL版本应用模块 (`app/`)
+- `models.py` - MySQL数据模型定义
+- `views.py` - MySQL版本视图逻辑
+- `urls.py` - MySQL版本URL路由
 - `admin.py` - 后台管理
 - `utils/` - 工具函数
 - `migrations/` - 数据库迁移文件
 
-#### 3. 数据采集模块 (`spider/`)
-- `SpiderMain.py` - 主爬虫程序
+#### 3. MongoDB版本应用模块 (`app_mongo/`)
+- `models.py` - MongoDB数据模型定义 (MongoEngine)
+- `views.py` - MongoDB版本视图逻辑
+- `urls.py` - MongoDB版本URL路由
+- `cache_utils.py` - 缓存工具
+- `fallback_data.py` - 降级数据
+
+#### 4. 数据采集模块 (`spider/`, `scrapy_spider/`)
+- `SpiderMain.py` - 传统爬虫程序
+- `scrapy_spider/` - Scrapy框架爬虫
 - 负责从各大房产网站采集房源数据
 
-#### 4. 前端资源
+#### 5. MongoDB集成模块 (`mongodb_integration/`)
+- `mongodb_config.py` - MongoDB配置
+- `models/` - MongoDB数据模型
+- `pipelines/` - 数据处理管道
+- `migrate_all_data.py` - 数据迁移脚本
+
+#### 6. 前端资源
 - `templates/` - HTML模板
+  - MySQL版本模板 (根目录)
+  - `mongo/` - MongoDB版本模板目录
   - `index.html` - 首页
   - `login.html` - 登录页
   - `pricePredict.html` - 价格预测页
@@ -42,8 +58,9 @@
   - `bootstrap/` - Bootstrap框架
   - `picture/` - 图片资源
 
-#### 5. 中间件 (`middleware/`)
+#### 7. 中间件 (`middleware/`)
 - `userInfoMiddleWare.py` - 用户信息中间件
+- `performance_middleware.py` - 性能监控中间件
 
 ### 启动脚本
 - `manage.py` - Django标准管理脚本

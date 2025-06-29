@@ -10,6 +10,13 @@
     <title>数据总览 - MongoDB版本</title>
     <meta name="referrer" content="no-referrer">
     <link rel="icon" href="/static/picture/mapview.png" type="image/x-icon">
+
+    <!-- 预加载关键CSS，防止格式崩坏 -->
+    <link rel="preload" href="/static/css/bootstrap.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/static/css/neon-core.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/static/css/neon-theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+    <!-- 关键CSS立即加载 -->
     <link rel="stylesheet" href="/static/css/jquery-ui-1.10.3.custom.min.css">
     <link rel="stylesheet" href="/static/css/entypo.css">
     <link rel="stylesheet" href="/static/css/css.css">
@@ -18,6 +25,115 @@
     <link rel="stylesheet" href="/static/css/neon-theme.css">
     <link rel="stylesheet" href="/static/css/neon-forms.css">
     <link rel="stylesheet" href="/static/css/custom.css">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="/static/css/datatables.responsive.css">
+    <link rel="stylesheet" href="/static/css/select2.css">
+
+    <!-- 修复DataTable控件显示问题和防止格式崩坏 -->
+    <style>
+        /* 防止页面加载时的格式崩坏 */
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        body.loaded {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* 图片加载优化 */
+        img {
+            max-width: 100%;
+            height: auto;
+            transition: all 0.3s ease;
+        }
+
+        /* 防止图片碎片化显示 */
+        .panel-body img {
+            display: block;
+            margin: 0 auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* DataTable控件样式修复 */
+        .dataTables_wrapper .dataTables_length select,
+        .dataTables_wrapper .dataTables_filter input {
+            display: inline-block !important;
+            width: auto !important;
+            margin: 0 5px !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            display: inline-block !important;
+            padding: 6px 12px !important;
+            margin: 0 2px !important;
+            border: 1px solid #ddd !important;
+            background: #fff !important;
+            cursor: pointer !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f5f5f5 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #337ab7 !important;
+            color: white !important;
+        }
+
+        .dataTables_wrapper .dataTables_info {
+            padding-top: 8px !important;
+        }
+
+        /* 修复select2图片缺失问题 */
+        .select2-container .select2-choice .select2-arrow b {
+            background-image: none !important;
+            background: #999 !important;
+            width: 0 !important;
+            height: 0 !important;
+            border-left: 4px solid transparent !important;
+            border-right: 4px solid transparent !important;
+            border-top: 4px solid #999 !important;
+        }
+
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
     <link rel="stylesheet" href="/static/css/font-awesome.min.css">
     <script src="/static/js/jquery-1.11.0.min.js"></script>
 
@@ -131,7 +247,13 @@
         margin-left: 10px;
     }
 </style>
-<body class="page-body  page-left-in" data-url="http://neon.dev">
+<body class="page-body page-left-in" data-url="http://neon.dev">
+
+<!-- 加载动画 -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
 <div class="page-container">
     <div class="sidebar-menu">
         <header class="logo-env">
@@ -294,14 +416,18 @@
                         <table class="table table-bordered datatable" id="table-1">
                             <thead>
                             <tr>
+                                <th>编号</th>
+                                <th>图片</th>
                                 <th>房源名称</th>
                                 <th>房源类型</th>
+                                <th>房源布局/地址</th>
+                                <th>标签</th>
                                 <th>行政区</th>
                                 <th>街道</th>
-                                <th>小区</th>
                                 <th>房源面积</th>
                                 <th>朝向</th>
                                 <th>价钱</th>
+                                <th>操作</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -333,9 +459,12 @@
                                     <td>{{ forloop.counter }}</td>
                                     <td class="center">
                                         {% if house.images %}
-                                            <img src="{{ house.images.0 }}" alt="" style="max-width: 50px; max-height: 50px;">
+                                            <img src="{{ house.images.0 }}" alt="房源图片"
+                                                 style="max-width: 50px; max-height: 50px; border-radius: 4px;"
+                                                 onerror="this.src='/static/picture/no-image.png'; this.onerror=null;"
+                                                 loading="lazy">
                                         {% else %}
-                                            <span class="text-muted">无图片</span>
+                                            <img src="/static/picture/no-image.png" alt="暂无图片" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
                                         {% endif %}
                                     </td>
                                     <td class="center">{{ house.title }}</td>
@@ -390,8 +519,8 @@
                                         ¥{% if house.price.monthly_rent %}{{ house.price.monthly_rent }}{% elif house.price %}{{ house.price }}{% else %}0{% endif %}/月
                                     </td>
                                     <td class="center text-center">
-                                        <a target="_blank" href="{{ house.crawl_meta.source_url }}" class="btn btn-info btn-sm">房源详情</a>
-                                        <a target="__blank" href="/mongo/addHistory/{{ house.id }}" class="btn btn-danger btn-sm">收藏房源</a>
+                                        <a target="_blank" href="{% if house.crawl_meta.source_url %}{{ house.crawl_meta.source_url }}{% else %}#{% endif %}" class="btn btn-info btn-sm">房源详情</a>
+                                        <a href="/mongo/addHistory/{{ house.id }}" class="btn btn-danger btn-sm" onclick="return confirm('确定要收藏这个房源吗？')">收藏房源</a>
                                     </td>
                                 </tr>
                             {% empty %}
@@ -413,28 +542,43 @@
     </div>
 </div>
 
+<!-- 核心JavaScript库 -->
 <script src="/static/js/main-gsap.js"></script>
 <script src="/static/js/jquery-ui-1.10.3.minimal.min.js"></script>
 <script src="/static/js/bootstrap.js"></script>
 <script src="/static/js/resizeable.js"></script>
 <script src="/static/js/neon-api.js"></script>
+
+<!-- DataTables相关库 - 按正确顺序加载 -->
+<script src="/static/js/jquery.dataTables.min.js"></script>
+<script src="/static/js/dataTables.bootstrap.js"></script>
+<link rel="stylesheet" href="/static/css/datatables.responsive.css">
+<script src="/static/js/datatables.responsive.js"></script>
+<script src="/static/js/jquery.dataTables.columnFilter.js"></script>
+<script src="/static/js/TableTools.min.js"></script>
+
+<!-- Select2插件 -->
+<link rel="stylesheet" href="/static/css/select2.css">
+<script src="/static/js/select2.min.js"></script>
+
+<!-- BlockUI插件 -->
+<script src="/static/js/jquery.blockUI.min.js"></script>
+
+<!-- 其他插件库 -->
 <script src="/static/js/jquery.sparkline.min.js"></script>
 <script src="/static/js/d3.v3.js"></script>
 <script src="/static/js/rickshaw.min.js"></script>
 <script src="/static/js/raphael-min.js"></script>
 <script src="/static/js/morris.min.js"></script>
 <script src="/static/js/toastr.js"></script>
+<script src="/static/js/lodash.min.js"></script>
+
+<!-- 主题相关脚本 -->
 <script src="/static/js/neon-chat.js"></script>
 <script src="/static/js/neon-custom.js"></script>
 <script src="/static/js/neon-demo.js"></script>
-<link rel="stylesheet" href="/static/css/datatables.responsive.css">
-<script src="/static/js/datatables.responsive.js"></script>
-<script src="/static/js/jquery.dataTables.columnFilter.js"></script>
-<script src="/static/js/jquery.dataTables.min.js"></script>
-<script src="/static/js/TableTools.min.js"></script>
-<script src="/static/js/dataTables.bootstrap.js"></script>
-<script src="/static/js/lodash.min.js"></script>
-</body>
+
+<!-- 修复：将JavaScript代码移到body标签内部 -->
 <script src="/static/js/echarts.js"></script>
 <script type="text/javascript">
     var responsiveHelper;
@@ -445,64 +589,15 @@
     var tableContainer;
 
     jQuery(document).ready(function ($) {
+        console.log("MongoDB TableData页面初始化开始...");
         tableContainer = $("#table-1");
 
-        {% if server_side %}
-        // 服务器端分页模式 - 使用兼容的配置
-        tableContainer.dataTable({
-            "bProcessing": true,
-            "bServerSide": true,
-            "sAjaxSource": "/mongo/api/tableData/",
-            "bDeferRender": true,
-            "fnServerData": function(sSource, aoData, fnCallback) {
-                $.ajax({
-                    "dataType": 'json',
-                    "type": "GET",
-                    "url": sSource,
-                    "data": aoData,
-                    "success": function(json) {
-                        console.log("Ajax success:", json);
-                        fnCallback(json);
-                    },
-                    "error": function(xhr, error, thrown) {
-                        console.log("Ajax error:", error, thrown);
-                        console.log("Response:", xhr.responseText);
-                    }
-                });
-            },
-            "sPaginationType": "bootstrap",
-            "aLengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
-            "iDisplayLength": 20,
-            "bStateSave": false,  // 暂时禁用状态保存
-            "aoColumns": [
-                {"sTitle": "标题", "sWidth": "25%"},
-                {"sTitle": "类型", "sWidth": "8%"},
-                {"sTitle": "城市", "sWidth": "10%"},
-                {"sTitle": "街道", "sWidth": "15%"},
-                {"sTitle": "小区", "sWidth": "15%"},
-                {"sTitle": "面积", "sWidth": "8%"},
-                {"sTitle": "朝向", "sWidth": "8%"},
-                {"sTitle": "价格", "sWidth": "11%"}
-            ],
-            "oLanguage": {
-                "sLengthMenu": "每页显示 _MENU_ 条记录",
-                "sZeroRecords": "抱歉， 没有找到",
-                "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
-                "sInfoEmpty": "没有数据",
-                "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
-                "oPaginate": {
-                    "sFirst": "首页",
-                    "sPrevious": "前一页",
-                    "sNext": "后一页",
-                    "sLast": "尾页"
-                },
-                "sZeroRecords": "没有检索到数据",
-                "sProcessing": "正在加载数据..."
-            },
-            "bAutoWidth": false
-        });
-        {% else %}
-        // 客户端分页模式（原有配置）
+        if (tableContainer.length === 0) {
+            console.error("未找到表格容器 #table-1");
+            return;
+        }
+
+        // 直接使用MySQL版本的客户端分页配置
         tableContainer.dataTable({
             "sPaginationType": "bootstrap",
             "aLengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
@@ -532,11 +627,47 @@
                 responsiveHelper.respond();
             }
         });
-        {% endif %}
 
-        $(".dataTables_wrapper select").select2({
-            minimumResultsForSearch: -1
-        });
+
+        // 初始化select2组件（如果可用）
+        try {
+            if (typeof $.fn.select2 !== 'undefined') {
+                $(".dataTables_wrapper select").select2({
+                    minimumResultsForSearch: -1
+                });
+                console.log("Select2组件初始化成功");
+            } else {
+                console.log("Select2插件未加载，跳过初始化");
+            }
+        } catch (e) {
+            console.error("Select2初始化失败:", e);
+        }
+
+        console.log("MongoDB TableData页面初始化完成");
+
+        // 隐藏加载动画，显示页面内容
+        setTimeout(function() {
+            $('#loadingOverlay').addClass('hidden');
+            $('body').addClass('loaded');
+        }, 500);
+    });
+
+    // 页面加载完成后的处理
+    $(window).on('load', function() {
+        // 确保所有资源加载完成后再显示页面
+        setTimeout(function() {
+            $('#loadingOverlay').addClass('hidden');
+            $('body').addClass('loaded');
+        }, 300);
+    });
+
+    // 图片加载优化
+    $('img').on('load', function() {
+        $(this).fadeIn(300);
+    }).on('error', function() {
+        $(this).attr('src', '/static/picture/no-image.png');
     });
 </script>
+
+</body>
 </html>

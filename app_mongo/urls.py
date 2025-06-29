@@ -5,6 +5,7 @@ MongoDB版本的URL配置
 
 from django.urls import path
 from app_mongo import views
+from app_mongo import python_viz_views
 
 urlpatterns = [
     # 用户认证
@@ -34,6 +35,16 @@ urlpatterns = [
     # 房价预测
     path('predict-all-prices/', views.mongo_predict_all_prices, name='mongo_predict_all_prices'),
     path('pricePredict/', views.mongo_predict_all_prices, name='mongo_price_predict_alt'),
+
+    # Python可视化模块
+    path('python-viz/', python_viz_views.python_dashboard, name='python_dashboard'),
+    path('python-viz/static-charts/', python_viz_views.static_charts_page, name='static_charts_page'),
+    path('python-viz/interactive-charts/', python_viz_views.interactive_charts_page, name='interactive_charts_page'),
+    path('python-viz/api/chart/', python_viz_views.chart_api, name='chart_api'),
+
+    # Python可视化版本的页面
+    path('python-housetyperank/', python_viz_views.python_housetyperank, name='python_housetyperank'),
+    path('python-servicemoney/', python_viz_views.python_servicemoney, name='python_servicemoney'),
 
     # 默认重定向到登录页
     path('', views.mongo_login, name='mongo_default'),

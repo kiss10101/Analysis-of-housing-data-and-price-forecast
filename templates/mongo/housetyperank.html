@@ -247,7 +247,13 @@
             <div class="col-md-4">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <div class="panel-title">{{ list_top_three.2|safe }}房源均价Top10</div>
+                        <div class="panel-title">
+                            {% if list_top_three.2 %}
+                                {{ list_top_three.2|safe }}房源均价Top10
+                            {% else %}
+                                第三种房型分析
+                            {% endif %}
+                        </div>
                         <div class="panel-options">
                             <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
                             <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
@@ -281,193 +287,220 @@
 <script src="/static/js/neon-demo.js"></script>
 <script src="/static/js/echarts.js"></script>
 <script>
-    var chartDom = document.getElementById('mainOne');
-    var myChart = echarts.init(chartDom);
-    var option;
-    option = {
-        title: {},
-        tooltip: {
-            trigger: 'item',
-            formatter: '{a} <br/>{b} : {c}元/㎡'
-        },
-        toolbox: {
-            feature: {
-                dataView: {readOnly: false},
-                restore: {},
-                saveAsImage: {}
-            }
-        },
-        legend: {
-            data: {{ list1_legend | safe}}
-        },
-        series: [
-            {
-                name: 'Funnel',
-                type: 'funnel',
-                left: '10%',
-                top: 80,
-                bottom: 20,
-                width: '80%',
-                min: 0,
-                max: 20000,
-                minSize: '0%',
-                maxSize: '100%',
-                sort: 'descending',
-                gap: 2,
-                label: {
-                    show: true,
-                    position: 'inside'
+    // 等待DOM加载完成
+    $(document).ready(function() {
+        // 初始化第一个图表
+        var chartDom1 = document.getElementById('mainOne');
+        if (chartDom1) {
+            var myChart1 = echarts.init(chartDom1);
+            var option1 = {
+                title: {
+                    text: '{{ list_top_three.0|safe }}房源价格分布',
+                    left: 'center'
                 },
-                labelLine: {
-                    length: 10,
-                    lineStyle: {
-                        width: 1,
-                        type: 'solid'
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b} : {c}元/月'
+                },
+                toolbox: {
+                    feature: {
+                        dataView: {readOnly: false},
+                        restore: {},
+                        saveAsImage: {}
                     }
                 },
-                itemStyle: {
-                    borderColor: '#fff',
-                    borderWidth: 1
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: {{ list1_legend | safe}}
                 },
-                emphasis: {
-                    label: {
-                        fontSize: 10
+                series: [
+                    {
+                        name: '{{ list_top_three.0|safe }}',
+                        type: 'funnel',
+                        left: '10%',
+                        top: 80,
+                        bottom: 20,
+                        width: '80%',
+                        min: 0,
+                        max: 20000,
+                        minSize: '0%',
+                        maxSize: '100%',
+                        sort: 'descending',
+                        gap: 2,
+                        label: {
+                            show: true,
+                            position: 'inside',
+                            formatter: '{b}: {c}元'
+                        },
+                        labelLine: {
+                            length: 10,
+                            lineStyle: {
+                                width: 1,
+                                type: 'solid'
+                            }
+                        },
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        },
+                        emphasis: {
+                            label: {
+                                fontSize: 12
+                            }
+                        },
+                        data: {{ list1 | safe }}
                     }
-                },
-                data: {{ types|safe }}.map((type, index) => ({
-                    name: type,
-                    value: {{ avg_prices|safe }}[index]
-                }))
-            }
-        ]
-    };
-    option && myChart.setOption(option);
+                ]
+            };
+            myChart1.setOption(option1);
+        }
+    });
 </script>
 <script>
-    var chartDom = document.getElementById('mainTwo');
-    var myChart = echarts.init(chartDom);
-    var option;
-    option = {
-        title: {},
-        tooltip: {
-            trigger: 'item',
-            formatter: '{a} <br/>{b} : {c}元/㎡'
-        },
-        toolbox: {
-            feature: {
-                dataView: {readOnly: false},
-                restore: {},
-                saveAsImage: {}
-            }
-        },
-        legend: {
-            data: {{ types|safe }}
-        },
-        series: [
-            {
-                name: 'Funnel',
-                type: 'funnel',
-                left: '10%',
-                top: 80,
-                bottom: 20,
-                width: '80%',
-                min: 0,
-                max: 3000,
-                minSize: '0%',
-                maxSize: '100%',
-                sort: 'descending',
-                gap: 2,
-                label: {
-                    show: true,
-                    position: 'inside'
+    // 初始化第二个图表
+    $(document).ready(function() {
+        var chartDom2 = document.getElementById('mainTwo');
+        if (chartDom2) {
+            var myChart2 = echarts.init(chartDom2);
+            var option2 = {
+                title: {
+                    text: '{{ list_top_three.1|safe }}房源价格分布',
+                    left: 'center'
                 },
-                labelLine: {
-                    length: 10,
-                    lineStyle: {
-                        width: 1,
-                        type: 'solid'
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b} : {c}元/月'
+                },
+                toolbox: {
+                    feature: {
+                        dataView: {readOnly: false},
+                        restore: {},
+                        saveAsImage: {}
                     }
                 },
-                itemStyle: {
-                    borderColor: '#fff',
-                    borderWidth: 1
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: {{ list2_legend | safe }}
                 },
-                emphasis: {
-                    label: {
-                        fontSize: 20
+                series: [
+                    {
+                        name: '{{ list_top_three.1|safe }}',
+                        type: 'funnel',
+                        left: '10%',
+                        top: 80,
+                        bottom: 20,
+                        width: '80%',
+                        min: 0,
+                        max: 15000,
+                        minSize: '0%',
+                        maxSize: '100%',
+                        sort: 'descending',
+                        gap: 2,
+                        label: {
+                            show: true,
+                            position: 'inside',
+                            formatter: '{b}: {c}元'
+                        },
+                        labelLine: {
+                            length: 10,
+                            lineStyle: {
+                                width: 1,
+                                type: 'solid'
+                            }
+                        },
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        },
+                        emphasis: {
+                            label: {
+                                fontSize: 12
+                            }
+                        },
+                        data: {{ list2 | safe }}
                     }
-                },
-                data: {{ types|safe }}.map((type, index) => ({
-                    name: type,
-                    value: {{ counts|safe }}[index]
-                }))
-            }
-        ]
-    };
-    option && myChart.setOption(option);
+                ]
+            };
+            myChart2.setOption(option2);
+        }
+    });
 </script>
 <script>
-    var chartDom = document.getElementById('mainThree');
-    var myChart = echarts.init(chartDom);
-    var option;
-    option = {
-        title: {},
-        tooltip: {
-            trigger: 'item',
-            formatter: '{a} <br/>{b} : {c}元/㎡'
-        },
-        toolbox: {
-            feature: {
-                dataView: {readOnly: false},
-                restore: {},
-                saveAsImage: {}
-            }
-        },
-        legend: {
-            data: {{ types|safe }}
-        },
-        series: [
-            {
-                name: 'Funnel',
-                type: 'funnel',
-                left: '10%',
-                top: 80,
-                bottom: 20,
-                width: '80%',
-                min: 0,
-                max: 5000,
-                minSize: '0%',
-                maxSize: '100%',
-                sort: 'descending',
-                gap: 2,
-                label: {
-                    show: true,
-                    position: 'inside'
+    // 初始化第三个图表
+    $(document).ready(function() {
+        var chartDom3 = document.getElementById('mainThree');
+        if (chartDom3) {
+            {% if list3 and list3|length > 0 %}
+            var myChart3 = echarts.init(chartDom3);
+            var option3 = {
+                title: {
+                    text: '{{ list_top_three.2|safe }}房源价格分布',
+                    left: 'center'
                 },
-                labelLine: {
-                    length: 10,
-                    lineStyle: {
-                        width: 1,
-                        type: 'solid'
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b} : {c}元/月'
+                },
+                toolbox: {
+                    feature: {
+                        dataView: {readOnly: false},
+                        restore: {},
+                        saveAsImage: {}
                     }
                 },
-                itemStyle: {
-                    borderColor: '#fff',
-                    borderWidth: 1
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: {{ list3_legend | safe }}
                 },
-                emphasis: {
-                    label: {
-                        fontSize: 20
+                series: [
+                    {
+                        name: '{{ list_top_three.2|safe }}',
+                        type: 'funnel',
+                        left: '10%',
+                        top: 80,
+                        bottom: 20,
+                        width: '80%',
+                        min: 0,
+                        max: 12000,
+                        minSize: '0%',
+                        maxSize: '100%',
+                        sort: 'descending',
+                        gap: 2,
+                        label: {
+                            show: true,
+                            position: 'inside',
+                            formatter: '{b}: {c}元'
+                        },
+                        labelLine: {
+                            length: 10,
+                            lineStyle: {
+                                width: 1,
+                                type: 'solid'
+                            }
+                        },
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        },
+                        emphasis: {
+                            label: {
+                                fontSize: 12
+                            }
+                        },
+                        data: {{ list3 | safe }}
                     }
-                },
-                data: {{ types|safe }}.map((type, index) => ({
-                    name: type + ' (平均价格)',
-                    value: {{ avg_prices|safe }}[index]
-                }))
-            }
-        ]
-    };
-    option && myChart.setOption(option);
+                ]
+            };
+            myChart3.setOption(option3);
+            {% else %}
+            // 第三个图表无数据，显示提示信息
+            chartDom3.innerHTML = '<div style="text-align: center; padding: 50px; color: #999; font-size: 14px;"><i class="fa fa-info-circle" style="font-size: 24px; margin-bottom: 10px;"></i><br>暂无第三种房型数据<br><small>当前数据库中只有 {{ list_top_three|length }} 种房型</small></div>';
+            {% endif %}
+        }
+    });
 </script>
 </body>
 </html>

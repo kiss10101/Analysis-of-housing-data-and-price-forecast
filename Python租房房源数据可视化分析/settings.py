@@ -212,3 +212,8 @@ SESSION_COOKIE_AGE = 3600  # 1小时
 
 # 静态文件优化
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# 认证设置
+LOGIN_URL = '/mongo/login/'
+LOGIN_REDIRECT_URL = '/mongo/index/'
+LOGOUT_REDIRECT_URL = '/mongo/login/'

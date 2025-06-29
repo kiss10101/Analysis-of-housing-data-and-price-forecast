@@ -1,0 +1,36 @@
+# Elasticsearch配置文件 - node-2
+# 集群配置
+cluster.name: house-data-cluster
+node.name: node-2
+
+# 节点角色
+node.master: false
+node.data: true
+node.ingest: true
+
+# 网络配置
+network.host: 127.0.0.1
+http.port: 9201
+transport.tcp.port: 9301
+
+# 发现配置
+discovery.seed_hosts: ["127.0.0.1:9300", "127.0.0.1:9301", "127.0.0.1:9302"]
+cluster.initial_master_nodes: ["node-1"]
+
+# 路径配置
+path.data: D:\Program Files\cursor-workpace\房源数据分析与价格预测\elasticsearch_cluster\node-2\data
+path.logs: D:\Program Files\cursor-workpace\房源数据分析与价格预测\elasticsearch_cluster\node-2\logs
+
+# 内存配置
+bootstrap.memory_lock: false
+
+# 安全配置（开发环境）
+xpack.security.enabled: false
+xpack.monitoring.collection.enabled: false
+
+# 性能配置
+indices.query.bool.max_clause_count: 10000
+search.max_buckets: 65536
+
+# 分片配置
+cluster.max_shards_per_node: 3000
