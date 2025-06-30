@@ -366,6 +366,10 @@
 <script src="/static/js/echarts.js"></script>
 
 <script>
+    // 用户时间数据
+    var userTime = {{ userTime | safe }};
+    console.log('用户时间数据:', userTime);
+
     var chartDom = document.getElementById('main');
     var myChart = echarts.init(chartDom);
     var option = {
@@ -402,7 +406,7 @@
                 labelLine: {
                     show: false
                 },
-                data: {{ userTime | safe }}
+                data: userTime
             }
         ]
     };

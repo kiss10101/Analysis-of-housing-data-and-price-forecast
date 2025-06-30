@@ -44,7 +44,7 @@ def mongo_login(request):
                     }
                     return redirect('mongo_index')
                 else:
-                    msg = '信息错误！'
+                    msg = f'❌ 登录失败！用户名 "{name}" 或密码错误，请检查输入信息。'
                     return render(request, 'mongo/login.html', {"msg": msg})
             else:
                 # 使用降级数据
@@ -73,6 +73,25 @@ def mongo_register(request):
         email = request.POST.get('email')
         avatar = request.FILES.get('avatar')
 
+        # 详细验证
+        if not name or not password:
+            msg = '❌ 用户名和密码不能为空！请填写完整信息。'
+            return render(request, 'mongo/register.html', {"msg": msg})
+
+        if len(name.strip()) < 3:
+            msg = f'❌ 用户名至少需要3个字符！当前长度：{len(name.strip())}个字符'
+            return render(request, 'mongo/register.html', {"msg": msg})
+
+        if len(password) < 6:
+            msg = f'❌ 密码至少需要6个字符！当前长度：{len(password)}个字符'
+            return render(request, 'mongo/register.html', {"msg": msg})
+
+        # 用户名格式验证
+        import re
+        if not re.match(r'^[a-zA-Z0-9_]+$', name):
+            msg = '❌ 用户名只能包含字母、数字和下划线！'
+            return render(request, 'mongo/register.html', {"msg": msg})
+
         try:
             # 检查MongoDB连接状态
             from .models import MONGODB_CONNECTION_SUCCESS
@@ -81,29 +100,48 @@ def mongo_register(request):
                 # 正常模式：使用MongoDB
                 existing_user = MongoUser.objects(username=name).first()
                 if existing_user:
-                    msg = '用户已存在！'
+                    msg = f'❌ 用户名 "{name}" 已存在！请选择其他用户名。'
                     return render(request, 'mongo/register.html', {"msg": msg})
                 else:
+                    # 处理头像文件
+                    avatar_path = ''
+                    if avatar:
+                        import os
+                        from django.conf import settings
+
+                        # 确保media目录存在
+                        media_dir = os.path.join(settings.MEDIA_ROOT, 'user', 'avatar')
+                        os.makedirs(media_dir, exist_ok=True)
+
+                        # 保存文件
+                        avatar_filename = f"{name}_{avatar.name}"
+                        avatar_path = os.path.join('user', 'avatar', avatar_filename)
+                        full_path = os.path.join(settings.MEDIA_ROOT, avatar_path)
+
+                        with open(full_path, 'wb+') as destination:
+                            for chunk in avatar.chunks():
+                                destination.write(chunk)
+
                     # 创建新用户
                     new_user = MongoUser(
                         username=name,
                         password=password,
                         phone=phone or '',
                         email=email or '',
-                        avatar=str(avatar) if avatar else ''
+                        avatar=avatar_path
                     )
                     new_user.save()
-                    msg = "注册成功！"
+                    msg = f"✅ 注册成功！用户 '{name}' 已创建，请使用注册信息登录。"
                     return render(request, 'mongo/login.html', {"msg": msg})
             else:
                 # 降级模式：模拟注册成功
-                msg = "注册成功！（演示模式）"
+                msg = "注册成功！（演示模式）请登录"
                 return render(request, 'mongo/login.html', {"msg": msg})
 
         except Exception as e:
-            # MongoDB操作失败，降级处理
-            msg = "注册成功！（演示模式）"
-            return render(request, 'mongo/login.html', {"msg": msg})
+            print(f"注册错误: {e}")  # 调试信息
+            msg = f"注册失败：{str(e)}"
+            return render(request, 'mongo/register.html', {"msg": msg})
 
     if request.method == 'GET':
         return render(request, 'mongo/register.html')
@@ -163,9 +201,42 @@ def mongo_index(request):
             ]
 
             user_time_data = list(MongoUser.objects.aggregate(user_time_pipeline))
-            result = [{'name': item['_id'], 'value': item['count']} for item in user_time_data]
-        except:
-            result = [{'name': '2025-06-23', 'value': 1}]
+            if user_time_data:
+                # 过滤掉None值并格式化数据
+                result = []
+                for item in user_time_data:
+                    date_str = item['_id']
+                    if date_str:  # 过滤掉None值
+                        result.append({'name': date_str, 'value': item['count']})
+
+                # 如果过滤后没有数据，创建默认数据
+                if not result:
+                    from datetime import datetime, timedelta
+                    today = datetime.now()
+                    result = [
+                        {'name': (today - timedelta(days=2)).strftime('%Y-%m-%d'), 'value': 2},
+                        {'name': (today - timedelta(days=1)).strftime('%Y-%m-%d'), 'value': 3},
+                        {'name': today.strftime('%Y-%m-%d'), 'value': 1}
+                    ]
+            else:
+                # 如果没有用户数据，创建一些默认数据
+                from datetime import datetime, timedelta
+                today = datetime.now()
+                result = [
+                    {'name': (today - timedelta(days=2)).strftime('%Y-%m-%d'), 'value': 2},
+                    {'name': (today - timedelta(days=1)).strftime('%Y-%m-%d'), 'value': 3},
+                    {'name': today.strftime('%Y-%m-%d'), 'value': 1}
+                ]
+        except Exception as e:
+            print(f"用户时间数据获取失败: {e}")
+            # 创建默认数据
+            from datetime import datetime, timedelta
+            today = datetime.now()
+            result = [
+                {'name': (today - timedelta(days=2)).strftime('%Y-%m-%d'), 'value': 2},
+                {'name': (today - timedelta(days=1)).strftime('%Y-%m-%d'), 'value': 3},
+                {'name': today.strftime('%Y-%m-%d'), 'value': 1}
+            ]
 
         try:
             # 获取最新用户
@@ -223,10 +294,12 @@ def mongo_index(request):
     day = timeFormat.tm_mday
     monthList = ["January","February","March","April","May","June","July","August","September","October","November","December"]
 
+    import json
+
     context = {
         'username': username,
         'useravatar': useravatar,
-        'userTime': result,
+        'userTime': json.dumps(result),  # 转换为JSON格式
         'newuserlist': newuserlist,
         'year': year,
         'month': monthList[month-1],

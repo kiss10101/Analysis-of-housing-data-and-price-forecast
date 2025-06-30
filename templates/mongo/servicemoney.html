@@ -376,33 +376,92 @@
     // 2. 房型对价格影响图表
     function initTypeChart() {
         const chart = echarts.init(document.getElementById('typeChart'));
+
+        // 按价格从高到低排序数据
+        const sortedTypeData = [...typeData].sort((a, b) => b.value - a.value);
+
         const option = {
             title: {
                 text: '不同房型的平均租金',
                 left: 'center'
             },
             tooltip: {
-                trigger: 'item',
+                trigger: 'axis',
                 formatter: function(params) {
-                    const item = typeData[params.dataIndex];
-                    return `${params.name}<br/>平均租金: ${params.value}元/月<br/>房源数量: ${item.count}套`;
+                    const data = params[0];
+                    const item = sortedTypeData[data.dataIndex];
+                    return `${data.name}<br/>平均租金: ${data.value}元/月<br/>房源数量: ${item.count}套`;
+                }
+            },
+            xAxis: {
+                type: 'category',
+                data: sortedTypeData.map(item => item.name),
+                axisLabel: {
+                    fontSize: 12,
+                    color: '#666'
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '租金(元/月)',
+                nameTextStyle: {
+                    color: '#666',
+                    fontSize: 12
+                },
+                axisLabel: {
+                    fontSize: 12,
+                    color: '#666',
+                    formatter: '{value}'
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#f0f0f0'
+                    }
                 }
             },
             series: [{
-                name: '房型租金分布',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                center: ['50%', '50%'],
-                data: typeData,
+                name: '平均租金',
+                type: 'bar',
+                data: sortedTypeData.map(item => item.value),
+                itemStyle: {
+                    color: function(params) {
+                        // 渐变色配置
+                        const colors = [
+                            '#ff6b6b', // 最高价格 - 红色
+                            '#4ecdc4', // 第二高 - 青色
+                            '#45b7d1', // 第三高 - 蓝色
+                            '#96ceb4'  // 最低价格 - 绿色
+                        ];
+                        return colors[params.dataIndex] || '#96ceb4';
+                    },
+                    borderRadius: [4, 4, 0, 0]
+                },
                 emphasis: {
                     itemStyle: {
                         shadowBlur: 10,
                         shadowOffsetX: 0,
-                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        shadowColor: 'rgba(0, 0, 0, 0.3)'
                     }
                 },
                 label: {
-                    formatter: '{b}: {c}元'
+                    show: true,
+                    position: 'top',
+                    formatter: '{c}元',
+                    fontSize: 12,
+                    color: '#333'
+                },
+                animationDelay: function (idx) {
+                    return idx * 100;
                 }
             }]
         };
