@@ -188,6 +188,14 @@ servicemoney_debug.html
 heatmap_analysis_debug.html
 python_*_debug.html
 test_report_*.txt
+final_fix_summary.py
+final_verification.py
+detailed_test.py
+direct_test.py
+simple_test.py
+test_heatmap_data.py
+文档整理分析报告.md
+最终修复验证报告.md
 
 # ================================
 # 文档和说明文件 (可选)
@@ -231,7 +239,7 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE_BIN/
-*.bat
+# *.bat  # 注释掉，保留重要的启动脚本
 .AppleDouble
 .LSOverride
 Icon?
@@ -287,6 +295,20 @@ credentials.json
 favicon.ico
 
 # ================================
+# 项目文档整理后的临时文件
+# ================================
+docs/📊_文档整理完成报告_*.md
+docs/📋_项目文档导航_*.md
+
+# ================================
+# 重要启动脚本 - 保留
+# ================================
+!启动MongoDB无认证.bat
+!启动房源分析系统.bat
+!start_project.bat
+!POWERSHELL_GIT_CLEANUP.ps1
+
+# ================================
 # 特殊说明 - 保留重要文件
 # ================================
 !README.md
@@ -301,3 +323,6 @@ favicon.ico
 !/static/bootstrap/
 !/static/font/
 !/templates/
+!🚀_项目完整启动步骤_*.md
+!docs/current/
+!docs/📋_项目文档导航_*.md

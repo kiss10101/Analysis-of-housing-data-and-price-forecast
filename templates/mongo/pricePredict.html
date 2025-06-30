@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Neon Admin Panel">
     <meta name="author" content="">
-    <title>MongoDB版本 - 价钱影响</title>
+    <title>MongoDB版本 - 房价预测</title>
     <link rel="icon" href="/static/picture/mapview.png" type="image/x-icon">
     <link rel="stylesheet" href="/static/css/jquery-ui-1.10.3.custom.min.css">
     <link rel="stylesheet" href="/static/css/entypo.css">
@@ -210,7 +210,8 @@
     var option;
 option = {
   title: {
-    text: 'Stacked Area Chart'
+    text: '不同房源类型在各城市的价格预测',
+    left: 'center'
   },
   tooltip: {
     trigger: 'axis',
@@ -224,60 +225,40 @@ option = {
   legend: {
     data: {{ types|safe }}
   },
-  toolbox: {
-    feature: {
-      saveAsImage: {}
-    }
-  },
   grid: {
     left: '3%',
     right: '4%',
     bottom: '3%',
     containLabel: true
   },
-  xAxis: [
-    {
-      type: 'category',
-      boundaryGap: false,
-      data: {{ cities|safe }}
-    }
-  ],
-  yAxis: [
-    {
-      type: 'value'
-    }
-  ],
+  xAxis: {
+    type: 'category',
+    data: {{ cities|safe }},
+    name: '城市',
+    nameLocation: 'middle',
+    nameGap: 30
+  },
+  yAxis: {
+    type: 'value',
+    name: '预测价格（元）',
+    nameLocation: 'middle',
+    nameGap: 40
+  },
   series: [
+    {% for type_name, prices in predictions.items %}
     {
-      name: '合租',
+      name: '{{ type_name }}',
       type: 'line',
-      stack: 'Total',
-      areaStyle: {},
-      emphasis: {
-        focus: 'series'
+      data: {{ prices|safe }},
+      smooth: true,
+      lineStyle: {
+        width: 3
       },
-      data: {{ predictions.合租 }}
-    },
-    {
-      name: '整租',
-      type: 'line',
-      stack: 'Total',
-      areaStyle: {},
-      emphasis: {
-        focus: 'series'
-      },
-      data: {{ predictions.整租 }}
-    },
-    {
-      name: '独栋',
-      type: 'line',
-      stack: 'Total',
-      areaStyle: {},
-      emphasis: {
-        focus: 'series'
-      },
-      data: {{ predictions.独栋 }}
-    }
+      itemStyle: {
+        borderWidth: 2
+      }
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
   ]
 };
 
