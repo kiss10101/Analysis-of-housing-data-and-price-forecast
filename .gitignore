@@ -198,6 +198,26 @@ test_heatmap_data.py
 最终修复验证报告.md
 
 # ================================
+# RAG模块开发前的临时文件清理
+# ================================
+# MongoDB Compass演示相关
+COMPASS_DEMO_ROLLBACK_STRATEGY.md
+MONGODB_COMPASS_CONNECTION_GUIDE.md
+PERFECT_DEMO_OPTIMIZATION.md
+
+# 导航修复相关
+navigation_fixes_backup.md
+navigation_fixes_completion_report.md
+heatmap_analysis_fixes_report.md
+test_chart_modification.md
+
+# 项目状态文档 (临时)
+PROJECT_STATUS_CURRENT_SESSION.md
+
+# Git操作准备文档 (临时)
+GITIGNORE_READY_TO_USE.txt
+
+# ================================
 # 文档和说明文件 (可选)
 # ================================
 *.docx~
@@ -217,6 +237,28 @@ quick_*.py
 final_*.py
 /mongodb_integration/migration_report_*.txt
 /tech_validation/reports/
+
+# ================================
+# RAG模块相关 (预留)
+# ================================
+# 知识库文件
+/rag_module/documents/
+/rag_module/vector_db/
+/rag_module/knowledge_base/
+/rag_module/embeddings/
+/rag_module/cache/
+
+# RAG配置和密钥
+rag_config.json
+volcengine_api_key.txt
+embedding_model_cache/
+vector_index_cache/
+
+# RAG日志和临时文件
+rag_*.log
+knowledge_build_*.log
+retrieval_*.log
+generation_*.log
 
 # ================================
 # 生产环境配置
@@ -295,6 +337,23 @@ credentials.json
 favicon.ico
 
 # ================================
+# 开发过程中的临时文件
+# ================================
+# Word文档临时文件
+~$*.docx
+~$*.doc
+*.tmp
+
+# 查询临时文件
+query
+query.txt
+query.sql
+
+# 配置文件备份
+*.conf.backup
+mongod_*.conf
+
+# ================================
 # 项目文档整理后的临时文件
 # ================================
 docs/📊_文档整理完成报告_*.md
@@ -326,3 +385,21 @@ docs/📋_项目文档导航_*.md
 !🚀_项目完整启动步骤_*.md
 !docs/current/
 !docs/📋_项目文档导航_*.md
+
+# ================================
+# RAG模块开发准备 - 保留核心架构
+# ================================
+!/app_mongo/
+!/scrapy_spider/
+!/mongodb_integration/
+!/elasticsearch_integration/
+!guangzhou_house.sql
+!house_price_model.joblib
+
+# ================================
+# 项目完成状态标记
+# ================================
+# 项目已完成双数据库架构开发
+# MongoDB版本功能完整，性能优异
+# 准备进入RAG模块开发阶段
+# 最后更新: 2025-06-30
