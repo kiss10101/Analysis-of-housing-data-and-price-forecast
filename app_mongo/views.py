@@ -42,6 +42,10 @@ def mongo_login(request):
                         'username': user.username,
                         'avatar': str(user.avatar) if user.avatar else ''
                     }
+                    # 处理next参数，登录后跳转到指定页面
+                    next_url = request.GET.get('next') or request.POST.get('next')
+                    if next_url:
+                        return redirect(next_url)
                     return redirect('mongo_index')
                 else:
                     msg = f'❌ 登录失败！用户名 "{name}" 或密码错误，请检查输入信息。'
@@ -56,6 +60,10 @@ def mongo_login(request):
                         'avatar': str(user.avatar) if user.avatar else ''
                     }
                     request.session['fallback_mode'] = True  # 标记降级模式
+                    # 处理next参数，登录后跳转到指定页面
+                    next_url = request.GET.get('next') or request.POST.get('next')
+                    if next_url:
+                        return redirect(next_url)
                     return redirect('mongo_index')
                 else:
                     msg = '信息错误！（当前为演示模式）'

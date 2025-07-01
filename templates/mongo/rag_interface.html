@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能问答 - 房源数据分析系统</title>
+    {% load static %}
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: 70vh;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .bot-message {
+            background-color: white;
+            border: 1px solid #ddd;
+            margin-right: auto;
+        }
+        
+        .input-area {
+            margin-top: 20px;
+        }
+        
+        .system-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .status-ready {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .loading {
+            display: none;
+        }
+        
+        .sources {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f1f3f4;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .source-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: white;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
+        }
+        
+        .quick-questions {
+            margin-bottom: 20px;
+        }
+        
+        .quick-question-btn {
+            margin: 5px;
+            padding: 8px 15px;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-question-btn:hover {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- 导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{% url 'mongo_index' %}">房源数据分析系统</a>
+                <div class="navbar-nav ms-auto">
+                    <span class="navbar-text me-3">
+                        欢迎，{{ request.session.mongo_username.username }}
+                    </span>
+                    <a class="nav-link" href="{% url 'mongo_index' %}">返回主页</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h2><i class="fas fa-robot"></i> 智能问答系统</h2>
+                <p class="text-muted">基于房源数据的智能问答，支持自然语言查询</p>
+                
+                <!-- 系统状态 -->
+                <div id="systemStatus" class="system-status">
+                    {% if system_initialized %}
+                        <div class="status-ready">
+                            <i class="fas fa-check-circle"></i> 系统已就绪，可以开始问答
+                        </div>
+                    {% else %}
+                        <div class="status-error">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {% if error_message %}
+                                {{ error_message }}
+                            {% else %}
+                                系统未初始化，请选择数据源...
+                            {% endif %}
+                            <div class="mt-2">
+                                <button id="initFromMongoBtn" class="btn btn-sm btn-primary me-2">从MongoDB初始化</button>
+                                <button id="initFromFileBtn" class="btn btn-sm btn-success me-2">从文件初始化</button>
+                                <button id="listFilesBtn" class="btn btn-sm btn-info">查看数据文件</button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 快速问题 -->
+                <div class="quick-questions">
+                    <h5>快速问题示例：</h5>
+                    <div class="d-flex flex-wrap">
+                        <span class="quick-question-btn" onclick="askQuickQuestion('海珠区有什么房子？')">海珠区有什么房子？</span>
+                        <span class="quick-question-btn" onclick="askQuickQuestion('3室2厅的房子价格如何？')">3室2厅的房子价格如何？</span>
+                        <span class="quick-question-btn" onclick="askQuickQuestion('最便宜的房子在哪里？')">最便宜的房子在哪里？</span>
+                        <span class="quick-question-btn" onclick="askQuickQuestion('面积最大的房源是什么？')">面积最大的房源是什么？</span>
+                        <span class="quick-question-btn" onclick="askQuickQuestion('推荐一些性价比高的房源')">推荐一些性价比高的房源</span>
+                    </div>
+                </div>
+
+                <!-- 聊天容器 -->
+                <div id="chatContainer" class="chat-container">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <p>开始您的房源咨询吧！您可以问我关于房源的任何问题。</p>
+                    </div>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="input-area">
+                    <div class="row">
+                        <div class="col-md-10">
+                            <input type="text" id="questionInput" class="form-control" 
+                                   placeholder="请输入您的问题，如：海珠区有什么房子？" 
+                                   onkeypress="handleKeyPress(event)">
+                        </div>
+                        <div class="col-md-2">
+                            <button id="askBtn" class="btn btn-primary w-100" onclick="askQuestion()">
+                                <span id="askBtnText">提问</span>
+                                <span id="askBtnLoading" class="loading">
+                                    <i class="fas fa-spinner fa-spin"></i> 思考中...
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <small class="text-muted">
+                                提示：您可以询问房源位置、价格、户型等信息，系统会智能理解您的需求
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统管理 -->
+                <div class="mt-4">
+                    <h5>系统管理</h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary" onclick="getSystemStatus()">
+                            <i class="fas fa-info-circle"></i> 系统状态
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="clearCache()">
+                            <i class="fas fa-trash"></i> 清空缓存
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="rebuildIndex()">
+                            <i class="fas fa-sync"></i> 重建索引
+                        </button>
+                    </div>
+
+                    <!-- 隐藏的管理员功能 -->
+                    <div class="mt-3">
+                        <small class="text-muted">管理员功能：</small>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-outline-danger btn-sm" onclick="resetSystem()" title="完全重置RAG系统">
+                                <i class="fas fa-power-off"></i> 重置系统
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="switchDataSource()" title="切换数据源">
+                                <i class="fas fa-exchange-alt"></i> 切换数据源
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- Font Awesome -->
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    
+    <script>
+        // 全局变量
+        let chatHistory = [];
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 如果系统未初始化，自动尝试初始化
+            {% if not system_initialized %}
+                setTimeout(initializeSystem, 1000);
+            {% endif %}
+        });
+
+        // 处理回车键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                askQuestion();
+            }
+        }
+
+        // 快速问题
+        function askQuickQuestion(question) {
+            document.getElementById('questionInput').value = question;
+            askQuestion();
+        }
+
+        // 提问函数
+        async function askQuestion() {
+            const questionInput = document.getElementById('questionInput');
+            const question = questionInput.value.trim();
+            
+            if (!question) {
+                alert('请输入问题');
+                return;
+            }
+
+            // 显示加载状态
+            setLoadingState(true);
+            
+            // 添加用户消息到聊天
+            addMessage(question, 'user');
+            
+            // 清空输入框
+            questionInput.value = '';
+
+            try {
+                const response = await fetch('{% url "rag_ask" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        top_k: 5
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 添加机器人回答
+                    addMessage(data.answer, 'bot', data.sources);
+                    
+                    // 保存到历史记录
+                    chatHistory.push({
+                        question: question,
+                        answer: data.answer,
+                        timestamp: new Date().toISOString()
+                    });
+                } else {
+                    addMessage('抱歉，我无法回答您的问题：' + data.error, 'bot');
+                }
+            } catch (error) {
+                console.error('请求失败:', error);
+                addMessage('抱歉，系统出现错误，请稍后再试。', 'bot');
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        // 添加消息到聊天容器
+        function addMessage(content, type, sources = null) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            // 如果是第一条消息，清空欢迎信息
+            if (chatContainer.children.length === 1 && chatContainer.children[0].classList.contains('text-center')) {
+                chatContainer.innerHTML = '';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            
+            let messageHTML = `<div>${content}</div>`;
+            
+            // 如果有来源信息，添加来源
+            if (sources && sources.length > 0) {
+                messageHTML += '<div class="sources"><strong>相关房源：</strong>';
+                sources.slice(0, 3).forEach((source, index) => {
+                    // 获取价格信息，优先使用monthly_rent
+                    const price = source.monthly_rent || source.price || 0;
+                    const priceText = price > 0 ? price : '价格面议';
+
+                    // 获取位置信息
+                    const location = [source.city, source.district, source.street]
+                        .filter(item => item && item !== '未知' && item !== '')
+                        .join(' ');
+
+                    messageHTML += `
+                        <div class="source-item">
+                            <strong>${source.title || '房源' + (index + 1)}</strong> -
+                            ${source.room_type || '户型未知'} -
+                            ${location || '位置未知'} -
+                            ${priceText}元/月 -
+                            ${source.area || 0}平米
+                        </div>
+                    `;
+                });
+                messageHTML += '</div>';
+            }
+            
+            messageDiv.innerHTML = messageHTML;
+            chatContainer.appendChild(messageDiv);
+            
+            // 滚动到底部
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 设置加载状态
+        function setLoadingState(loading) {
+            const askBtn = document.getElementById('askBtn');
+            const askBtnText = document.getElementById('askBtnText');
+            const askBtnLoading = document.getElementById('askBtnLoading');
+            
+            if (loading) {
+                askBtn.disabled = true;
+                askBtnText.style.display = 'none';
+                askBtnLoading.style.display = 'inline';
+            } else {
+                askBtn.disabled = false;
+                askBtnText.style.display = 'inline';
+                askBtnLoading.style.display = 'none';
+            }
+        }
+
+        // 从MongoDB初始化系统
+        async function initializeFromMongo() {
+            try {
+                updateSystemStatus(false, '正在从MongoDB初始化系统，请稍候...');
+
+                const response = await fetch('{% url "rag_initialize" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        force_rebuild: false,
+                        data_source: 'mongodb'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateSystemStatus(true, data.message);
+                } else {
+                    updateSystemStatus(false, '系统初始化失败：' + data.error);
+                }
+            } catch (error) {
+                console.error('初始化失败:', error);
+                updateSystemStatus(false, '系统初始化失败：网络错误');
+            }
+        }
+
+        // 从文件初始化系统
+        async function initializeFromFile() {
+            try {
+                // 先获取可用文件列表
+                const filesResponse = await fetch('{% url "rag_list_data_files" %}');
+                const filesData = await filesResponse.json();
+
+                if (!filesData.success || filesData.files.length === 0) {
+                    alert('没有找到可用的数据文件。请先使用export_data_for_rag.py导出数据。');
+                    return;
+                }
+
+                // 显示文件选择对话框
+                let fileOptions = '请选择数据文件:\n\n';
+                filesData.files.forEach((file, index) => {
+                    fileOptions += `${index + 1}. ${file.name} (${file.size_mb}MB, ${file.type})\n`;
+                });
+
+                const choice = prompt(fileOptions + '\n请输入文件编号:');
+                if (!choice) return;
+
+                const fileIndex = parseInt(choice) - 1;
+                if (fileIndex < 0 || fileIndex >= filesData.files.length) {
+                    alert('无效的文件编号');
+                    return;
+                }
+
+                const selectedFile = filesData.files[fileIndex];
+                updateSystemStatus(false, `正在从文件初始化系统: ${selectedFile.name}，请稍候...`);
+
+                const response = await fetch('{% url "rag_initialize" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        force_rebuild: true,
+                        data_source: 'file',
+                        data_file: selectedFile.path
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateSystemStatus(true, data.message);
+                } else {
+                    updateSystemStatus(false, '系统初始化失败：' + data.error);
+                }
+            } catch (error) {
+                console.error('初始化失败:', error);
+                updateSystemStatus(false, '系统初始化失败：网络错误');
+            }
+        }
+
+        // 列出数据文件
+        async function listDataFiles() {
+            try {
+                const response = await fetch('{% url "rag_list_data_files" %}');
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.files.length === 0) {
+                        alert('没有找到数据文件。\n\n请使用export_data_for_rag.py脚本导出数据：\n1. 运行: python export_data_for_rag.py\n2. 选择导出选项\n3. 文件会保存到rag_module/data/目录');
+                    } else {
+                        let fileList = `找到 ${data.count} 个数据文件:\n\n`;
+                        data.files.forEach((file, index) => {
+                            const date = new Date(file.modified * 1000).toLocaleString();
+                            fileList += `${index + 1}. ${file.name}\n   大小: ${file.size_mb}MB\n   类型: ${file.type}\n   修改时间: ${date}\n\n`;
+                        });
+                        alert(fileList);
+                    }
+                } else {
+                    alert('获取文件列表失败：' + data.error);
+                }
+            } catch (error) {
+                alert('获取文件列表失败：网络错误');
+            }
+        }
+
+        // 更新系统状态显示
+        function updateSystemStatus(ready, message) {
+            const statusDiv = document.getElementById('systemStatus');
+            statusDiv.innerHTML = `
+                <div class="${ready ? 'status-ready' : 'status-error'}">
+                    <i class="fas fa-${ready ? 'check-circle' : 'exclamation-triangle'}"></i> 
+                    ${message}
+                    ${!ready ? '<button id="initSystemBtn" class="btn btn-sm btn-primary ms-2" onclick="initializeSystem()">重新初始化</button>' : ''}
+                </div>
+            `;
+        }
+
+        // 获取系统状态
+        async function getSystemStatus() {
+            try {
+                const response = await fetch('{% url "rag_status" %}');
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('系统状态：\n' + JSON.stringify(data.stats, null, 2));
+                } else {
+                    alert('获取状态失败：' + data.error);
+                }
+            } catch (error) {
+                alert('获取状态失败：网络错误');
+            }
+        }
+
+        // 清空缓存
+        async function clearCache() {
+            if (!confirm('确定要清空缓存吗？')) return;
+            
+            try {
+                const response = await fetch('{% url "rag_clear_cache" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('缓存已清空');
+                } else {
+                    alert('清空缓存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('清空缓存失败：网络错误');
+            }
+        }
+
+        // 重建索引
+        async function rebuildIndex() {
+            if (!confirm('重建索引将花费较长时间，确定要继续吗？')) return;
+
+            try {
+                const response = await fetch('{% url "rag_rebuild_index" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        export_format: 'json'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('索引重建完成');
+                    updateSystemStatus(true, '系统已就绪，可以开始问答');
+                } else {
+                    alert('重建索引失败：' + data.error);
+                }
+            } catch (error) {
+                alert('重建索引失败：网络错误');
+            }
+        }
+
+        // 重置系统（管理员功能）
+        async function resetSystem() {
+            const confirmText = prompt('这将完全重置RAG系统！\n请输入"RESET"确认操作：');
+            if (confirmText !== 'RESET') {
+                alert('操作已取消');
+                return;
+            }
+
+            try {
+                updateSystemStatus(false, '正在重置系统，请稍候...');
+
+                // 调用重置API
+                const response = await fetch('{% url "rag_reset_system" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateSystemStatus(false, '系统已重置，请重新初始化');
+                    // 清空聊天记录
+                    document.getElementById('chatContainer').innerHTML = `
+                        <div class="text-center text-muted">
+                            <i class="fas fa-comments fa-3x mb-3"></i>
+                            <p>系统已重置，请重新初始化后开始问答。</p>
+                        </div>
+                    `;
+                    alert('系统重置完成！请重新选择数据源进行初始化。');
+                } else {
+                    updateSystemStatus(false, '系统重置失败：' + data.error);
+                }
+            } catch (error) {
+                alert('系统重置失败：网络错误');
+            }
+        }
+
+        // 切换数据源（管理员功能）
+        async function switchDataSource() {
+            const choice = confirm('切换数据源将重置当前系统。\n\n确定：切换到文件数据源\n取消：切换到MongoDB数据源');
+
+            if (choice) {
+                // 切换到文件数据源
+                initializeFromFile();
+            } else {
+                // 切换到MongoDB数据源
+                if (confirm('确定要从MongoDB重新初始化系统吗？')) {
+                    initializeFromMongo();
+                }
+            }
+        }
+
+        // 绑定按钮事件
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'initFromMongoBtn') {
+                initializeFromMongo();
+            } else if (e.target && e.target.id === 'initFromFileBtn') {
+                initializeFromFile();
+            } else if (e.target && e.target.id === 'listFilesBtn') {
+                listDataFiles();
+            }
+        });
+    </script>
+</body>
+</html>

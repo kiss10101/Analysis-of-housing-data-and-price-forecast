@@ -6,6 +6,7 @@ MongoDB版本的URL配置
 from django.urls import path
 from app_mongo import views
 from app_mongo import python_viz_views
+from app_mongo import rag_views
 
 urlpatterns = [
     # 用户认证
@@ -45,6 +46,18 @@ urlpatterns = [
     # Python可视化版本的页面
     path('python-housetyperank/', python_viz_views.python_housetyperank, name='python_housetyperank'),
     path('python-servicemoney/', python_viz_views.python_servicemoney, name='python_servicemoney'),
+
+    # RAG智能问答模块
+    path('rag/', rag_views.rag_interface, name='rag_interface'),
+    path('rag/ask/', rag_views.rag_ask, name='rag_ask'),
+    path('rag/search/', rag_views.rag_search, name='rag_search'),
+    path('rag/initialize/', rag_views.rag_initialize, name='rag_initialize'),
+    path('rag/status/', rag_views.rag_status, name='rag_status'),
+    path('rag/list-files/', rag_views.rag_list_data_files, name='rag_list_data_files'),
+    path('rag/clear-cache/', rag_views.rag_clear_cache, name='rag_clear_cache'),
+    path('rag/rebuild-index/', rag_views.rag_rebuild_index, name='rag_rebuild_index'),
+    path('rag/reset-system/', rag_views.rag_reset_system, name='rag_reset_system'),
+    path('rag/history/', rag_views.rag_history, name='rag_history'),
 
     # 默认重定向到登录页
     path('', views.mongo_login, name='mongo_default'),

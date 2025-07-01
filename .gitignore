@@ -202,6 +202,8 @@ test_heatmap_data.py
 # ================================
 *.docx~
 *.doc~
+~$*.docx
+~$*.doc
 notes.md
 todo.md
 personal_*.md
@@ -244,7 +246,7 @@ $RECYCLE_BIN/
 # ================================
 # RAG智能问答模块相关
 # ================================
-# RAG模块数据文件
+# RAG模块数据文件和缓存
 /rag_module/data/
 /rag_module/vector_db/
 /rag_module/embeddings/
@@ -274,6 +276,24 @@ rag_test_*.py
 rag_debug_*.py
 qa_test_*.py
 embedding_test_*.py
+test_rag_*.py
+test_*_rag.py
+test_file_*.py
+test_format_*.py
+test_optimized_*.py
+test_1000_*.py
+reset_rag_system.py
+create_*_data.py
+export_data_for_rag.py
+
+# RAG数据文件 - 保留小文件，忽略大文件
+/rag_module/documents/*.json
+!/rag_module/documents/houses_test_100.json
+!/rag_module/documents/houses_optimized_200.json
+# 忽略大于1MB的数据文件
+/rag_module/documents/houses_1000_*.json
+/rag_module/documents/houses_data_*.json
+/rag_module/documents/houses_export_*.json
 .AppleDouble
 .LSOverride
 Icon?
@@ -333,6 +353,15 @@ favicon.ico
 # ================================
 docs/📊_文档整理完成报告_*.md
 docs/📋_项目文档导航_*.md
+
+# ================================
+# 新会话和临时文件
+# ================================
+新会话启动指南.md
+check_users.py
+session_fix_report.md
+debug_tabledata.html
+🔧_Git操作准备报告_*.md
 
 # ================================
 # 重要启动脚本 - 保留
