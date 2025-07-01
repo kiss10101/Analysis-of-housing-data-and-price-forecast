@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neon Admin Panel">
+    <meta name="author" content="">
+    <title>房源类型排行</title>
+    <link rel="icon" href="/static/picture/mapview.png" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/jquery-ui-1.10.3.custom.min.css">
+    <link rel="stylesheet" href="/static/css/entypo.css">
+    <link rel="stylesheet" href="/static/css/css.css">
+    <link rel="stylesheet" href="/static/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/css/neon-core.css">
+    <link rel="stylesheet" href="/static/css/neon-theme.css">
+    <link rel="stylesheet" href="/static/css/neon-forms.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+
+    <script src="/static/js/jquery-1.11.0.min.js"></script>
+    <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+
+
+</head>
+<body class="page-body" data-url="http://neon.dev">
+
+<div class="page-container">
+    <div class="sidebar-menu">
+        <header class="logo-env">
+            <div class="logo" style="text-align:center">
+                <a href="/app/index/">
+                    <h3 style="color: #fff;font-weight: bold;margin-top: 5px;">广州市租房数据分析</h3>
+
+                </a>
+            </div>
+        </header>
+
+        <div class="sidebar-user-info">
+
+            <div class="sui-normal">
+                <a href="#" class="user-link">
+                    <img style="width:95%" src="/media/{{ useravatar }}" alt="" class="img-circle">
+
+                    <span style="text-align:center;padding-top:209px">欢迎回来</span>
+                    <strong style="text-align:center;margin-top:5px">{{ username }}</strong>
+                </a>
+            </div>
+
+        </div>
+
+        <ul id="main-menu" class="">
+            <li class="opened active">
+                <a href="/app/index/">
+                    <i class="entypo-gauge"></i>
+                    <span>首页</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="/app/selfInfo/">
+                    <i class="entypo-user"></i>
+                    <span>个人中心</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="entypo-layout"></i>
+                    <span>数据统计</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/app/tableData">
+                            <i class="icon-tasks"></i>
+                            <span>数据总览</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/historyTableData/">
+                            <i class="icon-star"></i>
+                            <span>房源收藏</span>
+                        </a>
+                    </li>
+
+                </ul>
+            </li>
+            <li class="opened active">
+                <a href="#">
+                    <i class="entypo-chart-bar"></i>
+                    <span>可视化图表</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/app/houseDistribute/">
+                            <i class="entypo-light-down"></i>
+                            <span>房源分布</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/typeincity/">
+                            <i class="entypo-light-down"></i>
+                            <span>房源数据</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/housewordcloud/">
+                            <i class="entypo-lamp"></i>
+                            <span>词云汇总</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="/app/housetyperank/">
+                            <i class="entypo-graduation-cap"></i>
+                            <span>类型级别</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/servicemoney/">
+                            <i class="entypo-network"></i>
+                            <span>价钱影响</span>
+                        </a>
+                    </li>
+
+
+                </ul>
+            </li>
+            <li>
+                <a href="/app/predict-all-prices/">
+                    <i class="icon-bar-chart"></i>
+                    <span>房价预测</span>
+                </a>
+            </li>
+        </ul>
+
+    </div>
+    <div class="main-content">
+        <div class="row">
+            <!-- Raw Links -->
+            <div style="display:flex;" class="col-md-12 hidden-xs">
+                <ol class="breadcrumb bc-3">
+                    <li>
+                        <a href="#"><i class="entypo-home"></i>可视化图表</a>
+                    </li>
+                    <li class="active">
+                        <strong>房源分布</strong>
+                    </li>
+                </ol>
+                <ul style="margin-left:auto" class="list-inline links-list pull-right">
+
+                    <li class="sep"></li>
+
+                    <li>
+                        <a href="/app/logOut">
+                            退出登录 <i class="entypo-logout right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-danger" data-collapsed="0">
+
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            选择城市
+                        </div>
+
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="panel-body">
+                        <form action="/app/housetyperank/" method="GET">
+                            <div class="col-md-10">
+                                <select name="cityname" class="form-control">
+                                    {% if defaultType == '不限' %}
+                                        <option selected value="不限">
+                                            不限
+                                        </option>
+                                    {% else %}
+                                        <option value="不限">
+                                            不限
+                                        </option>
+                                    {% endif %}
+                                    {% for i in citylist %}
+                                        {% if i == defaultType %}
+                                            <option selected value="{{ i }}">
+                                                {% else %}
+                                            <option value="{{ i }}">
+                                        {% endif %}
+                                    {{ i }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-red">提交</button>
+                            </div>
+                        </form>
+                        <br>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">{{ list_top_three.0|safe }}房源均价Top10</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body text-center">
+                        <div id="mainOne" style="width:100%;height:650px"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">{{ list_top_three.1|safe }}房源均价Top10</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body text-center">
+                        <div id="mainTwo" style="width:100%;height:650px"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">{{ list_top_three.2|safe }}房源均价Top10</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body text-center">
+                        <div id="mainThree" style="width:100%;height:650px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="main">
+            Copyright &copy; 2025. Python租房房源数据可视化分析 <a target="_blank"
+                                                                   href="https://hz.lianjia.com/">链家网</a>
+        </footer>
+    </div>
+
+</div>
+
+
+<!-- Bottom Scripts -->
+<script src="/static/js/main-gsap.js"></script>
+<script src="/static/js/jquery-ui-1.10.3.minimal.min.js"></script>
+<script src="/static/js/bootstrap.js"></script>
+<script src="/static/js/joinable.js"></script>
+<script src="/static/js/resizeable.js"></script>
+<script src="/static/js/fileinput.js"></script>
+<script src="/static/js/neon-api.js"></script>
+<script src="/static/js/neon-chat.js"></script>
+<script src="/static/js/neon-custom.js"></script>
+<script src="/static/js/neon-demo.js"></script>
+<script src="/static/js/echarts.js"></script>
+<script>
+    // 等待DOM加载完成
+    $(document).ready(function() {
+        // 初始化第一个图表
+        var chartDom1 = document.getElementById('mainOne');
+        if (chartDom1) {
+            var myChart1 = echarts.init(chartDom1);
+            var option1 = {
+                title: {
+                    text: '{{ list_top_three.0|safe }}房源价格分布',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b} : {c}元/月'
+                },
+                toolbox: {
+                    feature: {
+                        dataView: {readOnly: false},
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: {{ list1_legend | safe}}
+                },
+                series: [
+                    {
+                        name: '{{ list_top_three.0|safe }}',
+                        type: 'funnel',
+                        left: '10%',
+                        top: 80,
+                        bottom: 20,
+                        width: '80%',
+                        min: 0,
+                        max: 20000,
+                        minSize: '0%',
+                        maxSize: '100%',
+                        sort: 'descending',
+                        gap: 2,
+                        label: {
+                            show: true,
+                            position: 'inside',
+                            formatter: '{b}: {c}元'
+                        },
+                        labelLine: {
+                            length: 10,
+                            lineStyle: {
+                                width: 1,
+                                type: 'solid'
+                            }
+                        },
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        },
+                        emphasis: {
+                            label: {
+                                fontSize: 12
+                            }
+                        },
+                        data: {{ list1 | safe }}
+                    }
+                ]
+            };
+            myChart1.setOption(option1);
+        }
+    });
+</script>
+<script>
+    // 初始化第二个图表
+    $(document).ready(function() {
+        var chartDom2 = document.getElementById('mainTwo');
+        if (chartDom2) {
+            var myChart2 = echarts.init(chartDom2);
+            var option2 = {
+                title: {
+                    text: '{{ list_top_three.1|safe }}房源价格分布',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b} : {c}元/月'
+                },
+                toolbox: {
+                    feature: {
+                        dataView: {readOnly: false},
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: {{ list2_legend | safe }}
+                },
+                series: [
+                    {
+                        name: '{{ list_top_three.1|safe }}',
+                        type: 'funnel',
+                        left: '10%',
+                        top: 80,
+                        bottom: 20,
+                        width: '80%',
+                        min: 0,
+                        max: 15000,
+                        minSize: '0%',
+                        maxSize: '100%',
+                        sort: 'descending',
+                        gap: 2,
+                        label: {
+                            show: true,
+                            position: 'inside',
+                            formatter: '{b}: {c}元'
+                        },
+                        labelLine: {
+                            length: 10,
+                            lineStyle: {
+                                width: 1,
+                                type: 'solid'
+                            }
+                        },
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        },
+                        emphasis: {
+                            label: {
+                                fontSize: 12
+                            }
+                        },
+                        data: {{ list2 | safe }}
+                    }
+                ]
+            };
+            myChart2.setOption(option2);
+        }
+    });
+</script>
+<script>
+    // 初始化第三个图表
+    $(document).ready(function() {
+        var chartDom3 = document.getElementById('mainThree');
+        if (chartDom3) {
+            var myChart3 = echarts.init(chartDom3);
+            var option3 = {
+                title: {
+                    text: '{{ list_top_three.2|safe }}房源价格分布',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b} : {c}元/月'
+                },
+                toolbox: {
+                    feature: {
+                        dataView: {readOnly: false},
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: {{ list3_legend | safe }}
+                },
+                series: [
+                    {
+                        name: '{{ list_top_three.2|safe }}',
+                        type: 'funnel',
+                        left: '10%',
+                        top: 80,
+                        bottom: 20,
+                        width: '80%',
+                        min: 0,
+                        max: 12000,
+                        minSize: '0%',
+                        maxSize: '100%',
+                        sort: 'descending',
+                        gap: 2,
+                        label: {
+                            show: true,
+                            position: 'inside',
+                            formatter: '{b}: {c}元'
+                        },
+                        labelLine: {
+                            length: 10,
+                            lineStyle: {
+                                width: 1,
+                                type: 'solid'
+                            }
+                        },
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        },
+                        emphasis: {
+                            label: {
+                                fontSize: 12
+                            }
+                        },
+                        data: {{ list3 | safe }}
+                    }
+                ]
+            };
+            myChart3.setOption(option3);
+        }
+    });
+</script>
+</body>
+</html>

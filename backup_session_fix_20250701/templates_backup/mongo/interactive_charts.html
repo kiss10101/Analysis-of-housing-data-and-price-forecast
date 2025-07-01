@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - 房源数据分析系统</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-2px);
+        }
+        
+        .chart-header {
+            border-bottom: 2px solid #f8f9fa;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .chart-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .interactive-chart {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        
+        .tech-badge {
+            background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            margin-right: 8px;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .feature-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            margin: 2px;
+            display: inline-block;
+        }
+        
+        .data-source-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.9);
+            color: #495057;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .chart-controls {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/mongo/">
+                <i class="fas fa-chart-line me-2"></i>房源数据分析系统
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/mongo/python-viz/">
+                    <i class="fas fa-tachometer-alt me-1"></i>仪表板
+                </a>
+                <a class="nav-link" href="/mongo/python-viz/static-charts/">
+                    <i class="fas fa-chart-bar me-1"></i>静态图表
+                </a>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <img src="{{ useravatar }}" alt="Avatar" class="rounded-circle me-2" width="30" height="30">
+                        {{ username }}
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/mongo/tableData/">数据总览</a></li>
+                        <li><a class="dropdown-item" href="/mongo/houseDistribute/">房源分布</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/mongo/logout/">退出登录</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <div class="container mt-4">
+        <!-- 页面标题 -->
+        <div class="page-header position-relative">
+            <div class="data-source-badge">
+                <i class="fas fa-database me-1"></i>{{ data_source }}
+            </div>
+            <h1 class="mb-2">
+                <i class="fas fa-cube me-3"></i>Python交互式图表分析
+            </h1>
+            <p class="mb-0">基于Plotly的动态交互式数据可视化，支持缩放、筛选、悬停等高级交互功能</p>
+            <div class="mt-3">
+                <span class="feature-badge">缩放平移</span>
+                <span class="feature-badge">悬停信息</span>
+                <span class="feature-badge">3D可视化</span>
+                <span class="feature-badge">动态筛选</span>
+                <span class="feature-badge">数据钻取</span>
+            </div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="chart-container">
+            <h5><i class="fas fa-info-circle me-2 text-info"></i>交互式图表使用指南</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <h6 class="text-primary">基础交互</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-mouse me-2"></i>鼠标悬停查看详细信息</li>
+                        <li><i class="fas fa-search-plus me-2"></i>滚轮缩放图表</li>
+                        <li><i class="fas fa-hand-paper me-2"></i>拖拽平移视图</li>
+                        <li><i class="fas fa-expand me-2"></i>双击重置视图</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-success">高级功能</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-eye me-2"></i>点击图例显示/隐藏数据</li>
+                        <li><i class="fas fa-crop me-2"></i>框选区域放大</li>
+                        <li><i class="fas fa-download me-2"></i>右键菜单导出图片</li>
+                        <li><i class="fas fa-cube me-2"></i>3D图表支持旋转</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-warning">数据探索</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-filter me-2"></i>动态数据筛选</li>
+                        <li><i class="fas fa-chart-line me-2"></i>趋势分析</li>
+                        <li><i class="fas fa-search me-2"></i>异常值识别</li>
+                        <li><i class="fas fa-layer-group me-2"></i>多维度分析</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 交互式热力图 -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h4 class="chart-title">
+                    <i class="fas fa-fire me-2 text-danger"></i>广州市房源价格交互式热力图
+                </h4>
+                <p class="chart-description">
+                    展示不同城市和街道的房源价格分布热力图，支持缩放、悬停查看详细信息
+                </p>
+            </div>
+            
+            <div class="chart-controls">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            <strong>使用提示：</strong>鼠标悬停查看具体价格，滚轮缩放，拖拽平移，双击重置视图
+                        </small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="tech-badge">Plotly</span>
+                        <span class="tech-badge">热力图</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="interactive-chart">
+                {{ interactive_heatmap|safe }}
+            </div>
+            
+            <div class="mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    颜色越深表示价格越高，可通过交互功能深入探索不同区域的价格特征
+                </small>
+            </div>
+        </div>
+
+        <!-- 3D交互式散点图 -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h4 class="chart-title">
+                    <i class="fas fa-cube me-2 text-success"></i>房源面积-价格-单价 3D交互式散点图
+                </h4>
+                <p class="chart-description">
+                    三维展示房源面积、总价格和单价的关系，按城市分类着色，支持3D旋转和缩放
+                </p>
+            </div>
+            
+            <div class="chart-controls">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            <strong>3D操作：</strong>拖拽旋转视角，滚轮缩放，点击图例筛选城市，悬停查看房源详情
+                        </small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="tech-badge">3D可视化</span>
+                        <span class="tech-badge">多维分析</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="interactive-chart">
+                {{ interactive_scatter_3d|safe }}
+            </div>
+            
+            <div class="mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    X轴：面积，Y轴：月租金，Z轴：单价，不同颜色代表不同城市，可360度旋转查看
+                </small>
+            </div>
+        </div>
+
+        <!-- 技术特色说明 -->
+        <div class="chart-container">
+            <h5><i class="fas fa-cogs me-2 text-secondary"></i>Plotly技术特色</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">交互功能</h6>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-check text-success me-2"></i>实时数据悬停显示</li>
+                        <li><i class="fas fa-check text-success me-2"></i>缩放和平移操作</li>
+                        <li><i class="fas fa-check text-success me-2"></i>图例交互筛选</li>
+                        <li><i class="fas fa-check text-success me-2"></i>框选区域放大</li>
+                        <li><i class="fas fa-check text-success me-2"></i>3D视角旋转</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-success">技术优势</h6>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-check text-success me-2"></i>基于Web技术，跨平台兼容</li>
+                        <li><i class="fas fa-check text-success me-2"></i>高性能渲染引擎</li>
+                        <li><i class="fas fa-check text-success me-2"></i>丰富的图表类型</li>
+                        <li><i class="fas fa-check text-success me-2"></i>响应式设计</li>
+                        <li><i class="fas fa-check text-success me-2"></i>易于集成和定制</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据分析建议 -->
+        <div class="chart-container">
+            <h5><i class="fas fa-chart-line me-2 text-info"></i>数据分析建议</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-danger">热力图分析</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li>• 识别高价值区域的地理分布</li>
+                        <li>• 发现价格热点和冷点区域</li>
+                        <li>• 分析不同街道的价格差异</li>
+                        <li>• 为投资决策提供地理参考</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-success">3D散点图分析</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li>• 多维度分析房源性价比</li>
+                        <li>• 识别异常定价的房源</li>
+                        <li>• 比较不同城市的定价策略</li>
+                        <li>• 发现面积-价格-单价的关联模式</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="/static/bootstrap/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 添加图表加载完成的提示
+            console.log('交互式图表页面加载完成');
+            
+            // 可以在这里添加更多的JavaScript交互功能
+            // 例如：图表数据更新、筛选功能等
+        });
+        
+        // 图表错误处理
+        window.addEventListener('error', function(e) {
+            console.error('图表加载错误:', e);
+        });
+    </script>
+</body>
+</html>

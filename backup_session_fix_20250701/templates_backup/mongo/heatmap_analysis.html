@@ -1,0 +1,363 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="热力图分析">
+    <meta name="author" content="">
+    <title>价格影响因素分析 - MongoDB版本</title>
+    <link rel="icon" href="/static/picture/mapview.png" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/css/neon-core.css">
+    <link rel="stylesheet" href="/static/css/neon-theme.css">
+    <link rel="stylesheet" href="/static/css/entypo.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <script src="/static/js/jquery-1.11.0.min.js"></script>
+    <style>
+        .mongodb-badge {
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body class="page-body">
+
+<div class="page-container">
+    <div class="sidebar-menu">
+        <header class="logo-env">
+            <div class="logo" style="text-align:center">
+                <a href="/mongo/index/">
+                    <h3 style="color: #fff;font-weight: bold;margin-top: 5px;">广州市租房数据分析 <span class="mongodb-badge">MongoDB</span></h3>
+                </a>
+            </div>
+        </header>
+
+        <div class="sidebar-user-info">
+            <div class="sui-normal">
+                <a href="#" class="user-link">
+                    <img style="width:95%" src="/media/{{ useravatar|default:"user/avatar/default.png" }}" alt="" class="img-circle">
+                    <span style="text-align:center;padding-top:209px">欢迎回来</span>
+                    <strong style="text-align:center;margin-top:5px">{{ username }}</strong>
+                </a>
+            </div>
+        </div>
+
+        <ul id="main-menu" class="">
+            <li><a href="/mongo/index/"><i class="entypo-gauge"></i><span>首页</span></a></li>
+            <li><a href="/mongo/selfInfo/"><i class="entypo-user"></i><span>个人中心</span></a></li>
+            <li>
+                <a href="#"><i class="entypo-layout"></i><span>数据统计</span></a>
+                <ul>
+                    <li><a href="/mongo/tableData"><i class="icon-tasks"></i><span>数据总览</span></a></li>
+                    <li><a href="/mongo/historyTableData/"><i class="icon-star"></i><span>房源收藏</span></a></li>
+                </ul>
+            </li>
+            <li class="opened active">
+                <a href="#"><i class="entypo-chart-bar"></i><span>可视化图表</span></a>
+                <ul>
+                    <li><a href="/mongo/houseDistribute/"><i class="entypo-light-down"></i><span>房源分布</span></a></li>
+                    <li><a href="/mongo/typeincity/"><i class="entypo-feather"></i><span>户型占比</span></a></li>
+                    <li><a href="/mongo/housewordcloud/"><i class="entypo-lamp"></i><span>词云汇总</span></a></li>
+                    <li><a href="/mongo/housetyperank/"><i class="entypo-graduation-cap"></i><span>类型级别</span></a></li>
+                    <li><a href="/mongo/servicemoney/"><i class="entypo-network"></i><span>价钱影响</span></a></li>
+                    <li class="active"><a href="/mongo/heatmap-analysis/"><i class="entypo-chart-pie"></i><span>价格影响因素分析</span></a></li>
+                </ul>
+            </li>
+            <li><a href="/mongo/predict-all-prices/"><i class="icon-bar-chart"></i><span>房价预测</span></a></li>
+            <li>
+                <a href="/app/login/" style="color: #ff9800;">
+                    <i class="entypo-database"></i>
+                    <span>切换到MySQL版</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="row">
+            <div style="display:flex;" class="col-md-12 hidden-xs">
+                <ol class="breadcrumb bc-3">
+                    <li><a href="#"><i class="entypo-home"></i>可视化图表</a></li>
+                    <li class="active"><strong>热力图分析 - MongoDB版本</strong></li>
+                </ol>
+                <ul style="margin-left:auto" class="list-inline links-list pull-right">
+                    <li class="sep"></li>
+                    <li><a href="/mongo/logOut">退出登录 <i class="entypo-logout right"></i></a></li>
+                </ul>
+            </div>
+        </div>
+
+        <hr style="margin-top:0">
+
+        <!-- 数据库类型提示 -->
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="alert alert-success">
+                    <strong>MongoDB版本 - 热力图分析</strong> - 使用MongoDB聚合管道进行多维度数据分析
+                    <span class="pull-right">数据库类型: {{ database_type|default:"MongoDB" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <h2>房源影响因素热力图分析</h2>
+        <br>
+
+        <!-- 城市和户型对价格的影响 -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">城市和户型对房租的影响热力图</div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="cityTypeHeatmap" style="width:100%;height:500px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 面积和朝向对价格的影响 -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">面积和朝向对房租的影响热力图</div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="areaDirectHeatmap" style="width:100%;height:500px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 价格面积散点图 -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">面积与价格的关系散点图</div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="areaPriceScatter" style="width:100%;height:500px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="main">
+            Copyright &copy; 2025. Python租房房源数据可视化分析 - MongoDB版本 <a target="_blank" href="https://hz.lianjia.com/">链家网</a>
+        </footer>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="/static/js/main-gsap.js"></script>
+<script src="/static/js/jquery-ui-1.10.3.minimal.min.js"></script>
+<script src="/static/js/bootstrap.js"></script>
+<script src="/static/js/joinable.js"></script>
+<script src="/static/js/resizeable.js"></script>
+<script src="/static/js/fileinput.js"></script>
+<script src="/static/js/neon-api.js"></script>
+<script src="/static/js/neon-chat.js"></script>
+<script src="/static/js/neon-custom.js"></script>
+<script src="/static/js/neon-demo.js"></script>
+<script src="/static/js/echarts.js"></script>
+<script>
+// 城市和户型对价格的影响热力图
+var cityTypeChart = echarts.init(document.getElementById('cityTypeHeatmap'));
+var cityTypeOption = {
+    title: {
+        text: '城市和户型对房租的影响热力图',
+        left: 'center'
+    },
+    tooltip: {
+        position: 'top'
+    },
+    grid: {
+        height: '70%',
+        top: '15%'
+    },
+    xAxis: {
+        type: 'category',
+        data: {{ cities|safe }},
+        splitArea: {
+            show: true
+        },
+        axisLabel: {
+            interval: 0,
+            rotate: 45
+        },
+        name: '城市',
+        nameLocation: 'middle',
+        nameGap: 30
+    },
+    yAxis: {
+        type: 'category',
+        data: {{ types|safe }},
+        splitArea: {
+            show: true
+        },
+        name: '户型',
+        nameLocation: 'middle',
+        nameGap: 30
+    },
+    visualMap: {
+        min: {{ city_type_min }},
+        max: {{ city_type_max }},
+        calculable: true,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: '5%',
+        text: ['高价', '低价'],
+        inRange: {
+            color: ['#313695', '#4575b4', '#74add1', '#fee08b', '#d73027']
+        }
+    },
+    series: [{
+        name: '城市户型价格热力图',
+        type: 'heatmap',
+        data: {{ city_type_price|safe }},
+        label: {
+            show: false
+        },
+        emphasis: {
+            itemStyle: {
+                shadowBlur: 10,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+        }
+    }]
+};
+cityTypeChart.setOption(cityTypeOption);
+
+// 面积和朝向对价格的影响热力图
+var areaDirectChart = echarts.init(document.getElementById('areaDirectHeatmap'));
+
+// 生成面积范围标签
+var areaLabels = ['0~30㎡', '30~50㎡', '50~80㎡', '80~120㎡', '120~200㎡'];
+
+var areaDirectOption = {
+    title: {
+        text: '面积和朝向对房租的影响热力图',
+        left: 'center'
+    },
+    tooltip: {
+        position: 'top'
+    },
+    grid: {
+        height: '70%',
+        top: '15%'
+    },
+    xAxis: {
+        type: 'category',
+        data: areaLabels,
+        splitArea: {
+            show: true
+        },
+        name: '面积范围',
+        nameLocation: 'middle',
+        nameGap: 30
+    },
+    yAxis: {
+        type: 'category',
+        data: {{ directs|safe }},
+        splitArea: {
+            show: true
+        },
+        name: '朝向',
+        nameLocation: 'middle',
+        nameGap: 30
+    },
+    visualMap: {
+        min: {{ area_direct_min }},
+        max: {{ area_direct_max }},
+        calculable: true,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: '5%',
+        text: ['高价', '低价'],
+        inRange: {
+            color: ['#313695', '#4575b4', '#74add1', '#fee08b', '#d73027']
+        }
+    },
+    series: [{
+        name: '面积朝向价格热力图',
+        type: 'heatmap',
+        data: {{ area_direct_price|safe }},
+        label: {
+            show: false
+        },
+        emphasis: {
+            itemStyle: {
+                shadowBlur: 10,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+        }
+    }]
+};
+areaDirectChart.setOption(areaDirectOption);
+
+// 面积价格散点图
+var areaPriceChart = echarts.init(document.getElementById('areaPriceScatter'));
+var areaPriceOption = {
+    title: {
+        text: '面积价格的关系散点图',
+        left: 'center'
+    },
+    tooltip: {
+        trigger: 'item'
+    },
+    grid: {
+        top: '15%'
+    },
+    xAxis: {
+        type: 'value',
+        name: '面积（㎡）',
+        nameLocation: 'middle',
+        nameGap: 30
+    },
+    yAxis: {
+        type: 'value',
+        name: '价格（元）',
+        nameLocation: 'middle',
+        nameGap: 30,
+        min: {{ area_price_min }},
+        max: {{ area_price_max }}
+    },
+    visualMap: {
+        min: 0,
+        max: 300,
+        dimension: 0,
+        orient: 'vertical',
+        right: 10,
+        top: 'center',
+        text: ['面积大', '面积小'],
+        calculable: true,
+        inRange: {
+            color: ['#50a3ba', '#eac736', '#d94e5d']
+        }
+    },
+    series: [{
+        name: '面积价格关系',
+        type: 'scatter',
+        symbolSize: 8,
+        data: {{ area_price_data|safe }}
+    }]
+};
+areaPriceChart.setOption(areaPriceOption);
+
+// 响应式调整图表大小
+window.addEventListener('resize', function() {
+    cityTypeChart.resize();
+    areaDirectChart.resize();
+    areaPriceChart.resize();
+});
+</script>
+</body>
+</html>

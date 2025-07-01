@@ -1,0 +1,652 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neon Admin Panel">
+    <meta name="author" content="">
+    <title>MongoDB版本 - 价钱影响</title>
+    <link rel="icon" href="/static/picture/mapview.png" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/jquery-ui-1.10.3.custom.min.css">
+    <link rel="stylesheet" href="/static/css/entypo.css">
+    <link rel="stylesheet" href="/static/css/css.css">
+    <link rel="stylesheet" href="/static/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/css/neon-core.css">
+    <link rel="stylesheet" href="/static/css/neon-theme.css">
+    <link rel="stylesheet" href="/static/css/neon-forms.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+
+    <script src="/static/js/jquery-1.11.0.min.js"></script>
+    <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+<style>
+        .mongodb-badge {
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body class="page-body" data-url="http://neon.dev">
+
+<div class="page-container">
+    <div class="sidebar-menu">
+        <header class="logo-env">
+            <div class="logo" style="text-align:center">
+                <a href="/mongo/index/">
+                    <h3 style="color: #fff;font-weight: bold;margin-top: 5px;">广州市租房数据分析 <span class="mongodb-badge">MongoDB</span></h3>
+
+                </a>
+            </div>
+        </header>
+
+        <div class="sidebar-user-info">
+
+            <div class="sui-normal">
+                <a href="#" class="user-link">
+                    <img style="width:95%" src="/media/{{ useravatar|default:"user/avatar/default.png" }}" alt="" class="img-circle">
+
+                    <span style="text-align:center;padding-top:209px">欢迎回来</span>
+                    <strong style="text-align:center;margin-top:5px">{{ username }}</strong>
+                </a>
+            </div>
+
+        </div>
+
+        <ul id="main-menu" class="">
+            <li class="opened active">
+                <a href="/mongo/index/">
+                    <i class="entypo-gauge"></i>
+                    <span>首页</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="/mongo/selfInfo/">
+                    <i class="entypo-user"></i>
+                    <span>个人中心</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="entypo-layout"></i>
+                    <span>数据统计</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/mongo/tableData">
+                            <i class="icon-tasks"></i>
+                            <span>数据总览</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/historyTableData/">
+                            <i class="icon-star"></i>
+                            <span>房源收藏</span>
+                        </a>
+                    </li>
+              
+                </ul>
+            </li>
+            <li class="opened active">
+                <a href="#">
+                    <i class="entypo-chart-bar"></i>
+                    <span>可视化图表</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/mongo/houseDistribute/">
+                            <i class="entypo-light-down"></i>
+                            <span>房源分布</span>
+                        </a>
+                    </li>
+                  <li>
+                        <a href="/mongo/typeincity/">
+                            <i class="entypo-feather"></i>
+                            <span>户型占比</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/housewordcloud/">
+                            <i class="entypo-lamp"></i>
+                            <span>词云汇总</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/housetyperank/">
+                            <i class="entypo-graduation-cap"></i>
+                            <span>类型级别</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="/mongo/servicemoney/">
+                            <i class="entypo-network"></i>
+                            <span>价钱影响</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/heatmap-analysis/">
+                            <i class="entypo-chart-pie"></i>
+                            <span>价格影响因素分析</span>
+                        </a>
+                    </li>
+
+                </ul>
+            </li>
+                        <li>
+                <a href="/mongo/predict-all-prices/">
+                    <i class="icon-bar-chart"></i>
+                    <span>房价预测</span>
+                </a>
+            </li>
+        </ul>
+
+    </div>
+    <div class="main-content">
+        <div class="row">
+            <!-- Raw Links -->
+            <div style="display:flex;" class="col-md-12 hidden-xs">
+
+                <ol class="breadcrumb bc-3">
+                    <li>
+                        <a href="#"><i class="entypo-home"></i>可视化图表</a>
+                    </li>
+                    <li class="active">
+                        <strong>不同房源不同城市的均价</strong>
+                    </li>
+                </ol>
+                <ul style="margin-left:auto" class="list-inline links-list pull-right">
+
+                    <li class="sep"></li>
+                    <li>
+                        <a href="/mongo/logOut">
+                            退出登录 <i class="entypo-logout right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>房源价格影响因素分析</h2>
+        <br>
+
+        <!-- 第一行：面积和房型影响 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <div class="panel-title">面积对价格的影响</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body text-center">
+                        <div id="areaChart" style="width:100%;height:400px"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel panel-success">
+                    <div class="panel-heading">
+                        <div class="panel-title">房型对价格的影响</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body text-center">
+                        <div id="typeChart" style="width:100%;height:400px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二行：朝向和城市影响 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-warning">
+                    <div class="panel-heading">
+                        <div class="panel-title">朝向对价格的影响</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body text-center">
+                        <div id="directionChart" style="width:100%;height:400px"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel panel-danger">
+                    <div class="panel-heading">
+                        <div class="panel-title">城市对价格的影响</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body text-center">
+                        <div id="cityChart" style="width:100%;height:400px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三行：综合分析 -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <div class="panel-title">价格影响因素综合分析</div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div id="summaryChart" style="width:100%;height:400px"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <h4>影响因素排序</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>影响因素</th>
+                                                <th>相关性</th>
+                                                <th>影响程度</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>面积</td>
+                                                <td><span class="badge badge-success">强正相关</span></td>
+                                                <td>⭐⭐⭐⭐⭐</td>
+                                            </tr>
+                                            <tr>
+                                                <td>房型</td>
+                                                <td><span class="badge badge-info">中等影响</span></td>
+                                                <td>⭐⭐⭐⭐</td>
+                                            </tr>
+                                            <tr>
+                                                <td>城市</td>
+                                                <td><span class="badge badge-warning">地区差异</span></td>
+                                                <td>⭐⭐⭐⭐</td>
+                                            </tr>
+                                            <tr>
+                                                <td>朝向</td>
+                                                <td><span class="badge badge-primary">轻微影响</span></td>
+                                                <td>⭐⭐⭐</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="main">
+            Copyright &copy; 2025. Python租房房源数据可视化分析 - MongoDB版本 <a target="_blank"
+                                                                   href="https://hz.lianjia.com/">链家网</a>
+        </footer>
+    </div>
+
+</div>
+
+<!-- Bottom Scripts -->
+<script src="/static/js/main-gsap.js"></script>
+<script src="/static/js/jquery-ui-1.10.3.minimal.min.js"></script>
+<script src="/static/js/bootstrap.js"></script>
+<script src="/static/js/joinable.js"></script>
+<script src="/static/js/resizeable.js"></script>
+<script src="/static/js/fileinput.js"></script>
+<script src="/static/js/neon-api.js"></script>
+<script src="/static/js/neon-chat.js"></script>
+<script src="/static/js/neon-custom.js"></script>
+<script src="/static/js/neon-demo.js"></script>
+<script src="/static/js/echarts.js"></script>
+<script>
+    // 数据准备
+    const areaData = {{ area_price_data|safe }};
+    const typeData = {{ type_price_data|safe }};
+    const directionData = {{ direction_price_data|safe }};
+    const cityData = {{ city_price_data|safe }};
+
+    $(document).ready(function() {
+        // 初始化所有图表
+        initAreaChart();
+        initTypeChart();
+        initDirectionChart();
+        initCityChart();
+        initSummaryChart();
+    });
+
+    // 1. 面积对价格影响图表
+    function initAreaChart() {
+        const chart = echarts.init(document.getElementById('areaChart'));
+        const option = {
+            title: {
+                text: '不同面积区间的平均租金',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    const data = params[0];
+                    const item = areaData[data.dataIndex];
+                    return `${data.name}<br/>平均租金: ${data.value}元/月<br/>房源数量: ${item.count}套`;
+                }
+            },
+            xAxis: {
+                type: 'category',
+                data: areaData.map(item => item.name),
+                axisLabel: {
+                    rotate: 45
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '租金(元/月)'
+            },
+            series: [{
+                name: '平均租金',
+                type: 'bar',
+                data: areaData.map(item => item.value),
+                itemStyle: {
+                    color: function(params) {
+                        const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272'];
+                        return colors[params.dataIndex % colors.length];
+                    }
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: '{c}元'
+                }
+            }]
+        };
+        chart.setOption(option);
+    }
+
+    // 2. 房型对价格影响图表
+    function initTypeChart() {
+        const chart = echarts.init(document.getElementById('typeChart'));
+
+        // 按价格从高到低排序数据
+        const sortedTypeData = [...typeData].sort((a, b) => b.value - a.value);
+
+        const option = {
+            title: {
+                text: '不同房型的平均租金',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    const data = params[0];
+                    const item = sortedTypeData[data.dataIndex];
+                    return `${data.name}<br/>平均租金: ${data.value}元/月<br/>房源数量: ${item.count}套`;
+                }
+            },
+            xAxis: {
+                type: 'category',
+                data: sortedTypeData.map(item => item.name),
+                axisLabel: {
+                    fontSize: 12,
+                    color: '#666'
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '租金(元/月)',
+                nameTextStyle: {
+                    color: '#666',
+                    fontSize: 12
+                },
+                axisLabel: {
+                    fontSize: 12,
+                    color: '#666',
+                    formatter: '{value}'
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#f0f0f0'
+                    }
+                }
+            },
+            series: [{
+                name: '平均租金',
+                type: 'bar',
+                data: sortedTypeData.map(item => item.value),
+                itemStyle: {
+                    color: function(params) {
+                        // 渐变色配置
+                        const colors = [
+                            '#ff6b6b', // 最高价格 - 红色
+                            '#4ecdc4', // 第二高 - 青色
+                            '#45b7d1', // 第三高 - 蓝色
+                            '#96ceb4'  // 最低价格 - 绿色
+                        ];
+                        return colors[params.dataIndex] || '#96ceb4';
+                    },
+                    borderRadius: [4, 4, 0, 0]
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.3)'
+                    }
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: '{c}元',
+                    fontSize: 12,
+                    color: '#333'
+                },
+                animationDelay: function (idx) {
+                    return idx * 100;
+                }
+            }]
+        };
+        chart.setOption(option);
+    }
+
+    // 3. 朝向对价格影响图表
+    function initDirectionChart() {
+        const chart = echarts.init(document.getElementById('directionChart'));
+        const option = {
+            title: {
+                text: '不同朝向的平均租金',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    const data = params[0];
+                    const item = directionData[data.dataIndex];
+                    return `${data.name}<br/>平均租金: ${data.value}元/月<br/>房源数量: ${item.count}套`;
+                }
+            },
+            xAxis: {
+                type: 'category',
+                data: directionData.map(item => item.name),
+                axisLabel: {
+                    rotate: 45
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '租金(元/月)'
+            },
+            series: [{
+                name: '平均租金',
+                type: 'line',
+                data: directionData.map(item => item.value),
+                smooth: true,
+                itemStyle: {
+                    color: '#fac858'
+                },
+                areaStyle: {
+                    color: 'rgba(250, 200, 88, 0.3)'
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: '{c}元'
+                }
+            }]
+        };
+        chart.setOption(option);
+    }
+
+    // 4. 城市对价格影响图表
+    function initCityChart() {
+        const chart = echarts.init(document.getElementById('cityChart'));
+        const option = {
+            title: {
+                text: '不同城市的平均租金',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    const data = params[0];
+                    const item = cityData[data.dataIndex];
+                    return `${data.name}<br/>平均租金: ${data.value}元/月<br/>房源数量: ${item.count}套`;
+                }
+            },
+            xAxis: {
+                type: 'category',
+                data: cityData.map(item => item.name),
+                axisLabel: {
+                    rotate: 45
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '租金(元/月)'
+            },
+            series: [{
+                name: '平均租金',
+                type: 'bar',
+                data: cityData.map(item => item.value),
+                itemStyle: {
+                    color: '#ee6666'
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: '{c}元'
+                }
+            }]
+        };
+        chart.setOption(option);
+    }
+
+    // 5. 综合分析图表
+    function initSummaryChart() {
+        const chart = echarts.init(document.getElementById('summaryChart'));
+
+        // 计算各因素的价格范围
+        const factors = [
+            {
+                name: '面积',
+                min: Math.min(...areaData.map(item => item.value)),
+                max: Math.max(...areaData.map(item => item.value)),
+                avg: areaData.reduce((sum, item) => sum + item.value, 0) / areaData.length
+            },
+            {
+                name: '房型',
+                min: Math.min(...typeData.map(item => item.value)),
+                max: Math.max(...typeData.map(item => item.value)),
+                avg: typeData.reduce((sum, item) => sum + item.value, 0) / typeData.length
+            },
+            {
+                name: '朝向',
+                min: Math.min(...directionData.map(item => item.value)),
+                max: Math.max(...directionData.map(item => item.value)),
+                avg: directionData.reduce((sum, item) => sum + item.value, 0) / directionData.length
+            },
+            {
+                name: '城市',
+                min: Math.min(...cityData.map(item => item.value)),
+                max: Math.max(...cityData.map(item => item.value)),
+                avg: cityData.reduce((sum, item) => sum + item.value, 0) / cityData.length
+            }
+        ];
+
+        const option = {
+            title: {
+                text: '各影响因素价格波动范围对比',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    let result = params[0].name + '<br/>';
+                    params.forEach(param => {
+                        result += `${param.seriesName}: ${param.value}元/月<br/>`;
+                    });
+                    return result;
+                }
+            },
+            legend: {
+                data: ['最低价', '平均价', '最高价'],
+                top: 30
+            },
+            xAxis: {
+                type: 'category',
+                data: factors.map(item => item.name)
+            },
+            yAxis: {
+                type: 'value',
+                name: '租金(元/月)'
+            },
+            series: [
+                {
+                    name: '最低价',
+                    type: 'bar',
+                    data: factors.map(item => Math.round(item.min)),
+                    itemStyle: { color: '#91cc75' }
+                },
+                {
+                    name: '平均价',
+                    type: 'bar',
+                    data: factors.map(item => Math.round(item.avg)),
+                    itemStyle: { color: '#5470c6' }
+                },
+                {
+                    name: '最高价',
+                    type: 'bar',
+                    data: factors.map(item => Math.round(item.max)),
+                    itemStyle: { color: '#ee6666' }
+                }
+            ]
+        };
+        chart.setOption(option);
+    }
+</script>
+</body>
+</html>

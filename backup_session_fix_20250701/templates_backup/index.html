@@ -7,8 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Neon Admin Panel">
     <meta name="author" content="">
-    <title>数据总览</title>
-    <meta name="referrer" content="no-referrer">
+    <title>首页</title>
     <link rel="icon" href="/static/picture/mapview.png" type="image/x-icon">
     <link rel="stylesheet" href="/static/css/jquery-ui-1.10.3.custom.min.css">
     <link rel="stylesheet" href="/static/css/entypo.css">
@@ -19,6 +18,17 @@
     <link rel="stylesheet" href="/static/css/neon-forms.css">
     <link rel="stylesheet" href="/static/css/custom.css">
     <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+
+    <!-- 预加载关键CSS，防止闪烁 -->
+    <style>
+        /* 防止页面闪烁的预加载样式 */
+        .page-container { opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .page-container.loaded { opacity: 1; }
+
+        /* 图表容器预设高度，防止布局跳动 */
+        #mainOne { min-height: 400px; }
+    </style>
+
     <script src="/static/js/jquery-1.11.0.min.js"></script>
 </head>
 <style>
@@ -78,7 +88,7 @@
     }
 </style>
 <body class="page-body  page-left-in" data-url="http://neon.dev">
-<div class="page-container">
+<div class="page-container" id="pageContainer">
     <div class="sidebar-menu">
         <header class="logo-env">
 
@@ -94,7 +104,7 @@
         <div class="sidebar-user-info">
             <div class="sui-normal">
                 <a href="#" class="user-link">
-                    <img style="width:95%" src="/media/{{ useravatar|default:'user/avatar/default.png' }}" class="img-circle">
+                    <img style="width:95%" src=/media/{{ request.session.username.avatar | safe }} class="img-circle">
 
                     <span style="text-align:center;padding-top:209px">欢迎回来</span>
                     <strong style="text-align:center;margin-top:5px">{{ username }}</strong>
@@ -105,7 +115,7 @@
 
 
         <ul id="main-menu" class="">
-            <li>
+            <li class="opened active">
                 <a href="/app/index/">
                     <i class="entypo-gauge"></i>
                     <span>首页</span>
@@ -119,9 +129,13 @@
                     <span>个人中心</span>
                 </a>
             </li>
-            <li class="opened active">
+            <li>
+                <a href="#">
+                    <i class="entypo-layout"></i>
+                    <span>数据统计</span>
+                </a>
                 <ul>
-                    <li class="active">
+                    <li>
                         <a href="/app/tableData">
                             <i class="icon-tasks"></i>
                             <span>数据总览</span>
@@ -169,13 +183,19 @@
                     <li>
                         <a href="/app/servicemoney/">
                             <i class="entypo-network"></i>
-                            <span>价钱影响 </span>
+                            <span>价钱影响</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/app/heatmap-analysis/">
+                            <i class="entypo-chart-pie"></i>
+                            <span>热力图分析</span>
                         </a>
                     </li>
 
                 </ul>
             </li>
-                        <li>
+            <li>
                 <a href="/app/predict-all-prices/">
                     <i class="icon-bar-chart"></i>
                     <span>房价预测</span>
@@ -207,64 +227,149 @@
         <hr style="margin-top:0">
 
         <div class="row">
-            <div class="col-sm-12">
-                <div class="panel panel-default" data-collapsed="0"><!-- to apply shadow add class "panel-shadow" -->
-                    <!-- panel head -->
-                    <div class="panel-heading">
-                        <div class="panel-title">数据表格</div>
 
-                        <div class="panel-options">
-                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
-                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+            <div class="col-sm-9">
+
+                <div class="row">
+
+                    <div class="col-sm-6">
+
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <div class="panel-title">用户创建时间饼状图</div>
+                                <div class="panel-options">
+                                    <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                                    <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div id="main" style="width:80%;height:280px">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <div class="panel-title">最新用户信息</div>
+                                <div class="panel-options">
+                                    <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                                    <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                                </div>
+                            </div>
+                            <table class="table table-bordered table-responsive">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户</th>
+                                    <th>手机号</th>
+                                    <th>创建时间</th>
+                                    <th>用户头像</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for item in newuserlist %}
+                                    <tr>
+                                        <td>{{ item.id }}</td>
+                                        <td>{{ item.username }}</td>
+                                        <td>{{ item.phone }}</td>
+                                        <td>{{ item.time }}</td>
+                                        <td class="text-center">
+                                            <img src="/media/{{ item.avatar }}" alt="" class="img-circle" width="32">
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            <h4>
+                                轮播图
+                            </h4>
                         </div>
                     </div>
-                    <div class="panel-body">
-                        <table class="table table-bordered datatable" id="table-1">
-                            <thead>
-                            <tr>
-                                <th>编号</th>
-                                <th>图片</th>
-                                <th>房源名称</th>
-                                <th>房源类型</th>
-                                <th>房源布局/地址</th>
-                                <th>标签</th>
-                                <th>行政区</th>
-                                <th>街道</th>
-                                <th>房源面积</th>
-                                <th>朝向</th>
-                                <th>价钱</th>
-                                <th>跳转</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for p in houses %}
-                                <tr class="gradeU">
-                                    <td>{{ forloop.counter }}</td>
-                                    <td class="center">
-                                        <img src="{{ p.img }}" alt="">
-                                    </td>
-                                    <td class="center">{{ p.title }}</td>
-                                    <td class="center">{{ p.type }}</td>
-                                    <td class="center">{{ p.building }}</td>
-                                    <td class="center">{{ p.tag }}</td>
-                                    <td class="center">{{ p.city }}</td>
-                                    <td class="center">{{ p.street }}</td>
-                                    <td class="center">{{ p.area }}㎡</td>
-                                    <td class="center">{{ p.direct }}</td>
-                                    <td class="center">{{ p.price }}/月</td>
-                                    <td class="center text-center">
-                                        <a target="_blank" href="https://qd.lianjia.com/{{ p.link }}"
-                                                class="btn btn-info">房源详情</a>
-
-                                        <a target="__blank" href="/app/addHistory/{{ p.id }}"
-                                           class="btn btn-danger">收藏房源</a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-
+                    <div class="carousel-container">
+                        <div class="carousel-slide">
+                            <img src="/static/picture/index.png" alt="Image 1" style="width: 100%">
+                            <img src="/static/picture/index.png" alt="Image 2" style="width: 100%">
+                            <img src="/static/picture/index.png" alt="Image 3" style="width: 100%">
+                        </div>
+                        <button class="prev" onclick="prevSlide()">←</button>
+                        <button class="next" onclick="nextSlide()">→</button>
                     </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="tile-stats tile-green">
+                    <div class="icon"><i class="entypo-chart-bar"></i></div>
+                    <div class="num" data-start="0" data-end="{{ placeslength }}" data-duration="1500"
+                         data-delay="600" style="font-size: 24px">{{ houseslength |  safe }}
+                    </div>
+
+                    <h3>数据总量统计</h3>
+                </div>
+
+                <div class="tile-stats tile-red">
+                    <div class="icon"><i class="entypo-users"></i></div>
+                    <div class="num" data-start="0" data-postfix="" data-duration="1500"
+                         data-delay="0" style="font-size: 24px">{{ userlength | safe }}
+                    </div>
+                    <h3>用户数量统计</h3>
+                </div>
+                <div class="tile-stats tile-aqua">
+                    <div class="icon"><i class="entypo-mail"></i></div>
+                    <div class="num" style="font-size: 24px">{{ averageprice | safe }}元/月
+                    </div>
+                    <h3>均价最高</h3>
+                </div>
+
+                <div class="tile-stats tile-orange">
+                    <div class="icon"><i class="entypo-infinity"></i></div>
+                    <div class="num" data-duration="1500"
+                         data-delay="1200" style="font-size: 24px">{{ str0 | safe }}
+                    </div>
+                    <h3>大众需求</h3>
+                </div>
+
+
+                <div class="tile-stats tile-cyan">
+                    <div class="icon"><i class="entypo-network"></i></div>
+                    <div class="num" style="font-size: 24px">{{ buildingtype|safe }}
+                    </div>
+
+                    <h3>热门布局</h3>
+                </div>
+                <div class="tile-stats tile-brown">
+                    <div class="icon"><i class="entypo-briefcase"></i></div>
+                    <div class="num" data-start="0" data-duration="1800"
+                         data-delay="1200" style="font-size: 24px">{{ area_max|safe }}㎡
+                    </div>
+                    <h3>最大面积</h3>
+                </div>
+                <div class="tile-stats tile-blue">
+                    <div class="icon"><i class="entypo-briefcase"></i></div>
+                    <div class="num" data-start="0" data-duration="1800"
+                         data-delay="1200" style="font-size: 24px">{{ str1 | safe }}
+                    </div>
+                    <h3>热门城市</h3>
+                </div>
+                <div class="tile-stats tile-brown">
+                    <div class="icon"><i class="entypo-briefcase"></i></div>
+                    <div class="num" data-start="0" data-duration="1800"
+                         data-delay="1200" style="font-size: 24px">{{ area_max | safe }}㎡
+                    </div>
+                    <h3>占地面积Top1</h3>
                 </div>
 
             </div>
@@ -311,6 +416,10 @@
     var tableContainer;
 
     jQuery(document).ready(function ($) {
+        // 页面加载完成后显示内容，防止闪烁
+        setTimeout(function() {
+            $('#pageContainer').addClass('loaded');
+        }, 100);
         tableContainer = $("#table-1");
 
         tableContainer.dataTable({
@@ -319,21 +428,10 @@
             "bStateSave": true,
 
 
-            "aoColumnDefs": [
-                { 
-                    "aTargets": [10],
-                    "sType": "numeric", 
-                    "mRender": function(data, type, full) {
-                        if (type === 'sort') {
-                            return parseFloat(data.replace(/[^0-9.]/g, ''));
-                        }
-                        return data;
-                    }
-                }
-            ],
-
+            // Responsive Settings
             bAutoWidth: false,
             fnPreDrawCallback: function () {
+                // Initialize the responsive datatables helper once.
                 if (!responsiveHelper) {
                     responsiveHelper = new ResponsiveDatatablesHelper(tableContainer, breakpointDefinition);
                 }
@@ -352,9 +450,12 @@
     });
 </script>
 <script>
-    var chartDom = document.getElementById('main');
-    var myChart = echarts.init(chartDom);
-    var option;
+    // 延迟初始化图表，确保DOM完全加载
+    setTimeout(function() {
+        var chartDom = document.getElementById('main');
+        if (chartDom) {
+            var myChart = echarts.init(chartDom);
+            var option;
     option = {
         tooltip: {
             trigger: 'item'
@@ -394,9 +495,11 @@
         ]
     };
     option && myChart.setOption(option);
+        }
+    }, 200); // 延迟200ms初始化图表
 
 </script>
-<script src="script.js"></script>
+<script src="/static/js/script.js"></script>
 <script>
     let currentIndex = 0;
 

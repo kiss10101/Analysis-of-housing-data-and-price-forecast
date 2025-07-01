@@ -47,6 +47,7 @@ MIDDLEWARE = [
     'middleware.performance_middleware.CacheControlMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'middleware.session_validation_middleware.SessionValidationMiddleware',  # Session验证中间件
     'middleware.performance_middleware.CompressionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -205,10 +206,11 @@ LOGGING = {
     },
 }
 
-# 性能优化配置
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-SESSION_CACHE_ALIAS = 'default'
+# Session配置优化 - 使用数据库存储确保数据一致性
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # 改为纯数据库存储
 SESSION_COOKIE_AGE = 3600  # 1小时
+SESSION_COOKIE_NAME = 'house_analysis_sessionid'  # 自定义session名称
+SESSION_SAVE_EVERY_REQUEST = True  # 每次请求都保存session
 
 # 静态文件优化
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'

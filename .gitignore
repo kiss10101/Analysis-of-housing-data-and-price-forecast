@@ -240,6 +240,40 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE_BIN/
 # *.bat  # 注释掉，保留重要的启动脚本
+
+# ================================
+# RAG智能问答模块相关
+# ================================
+# RAG模块数据文件
+/rag_module/data/
+/rag_module/vector_db/
+/rag_module/embeddings/
+/rag_module/cache/
+/rag_module/logs/
+
+# 向量数据库文件
+*.faiss
+*.index
+*.vector
+chromadb/
+vector_store/
+
+# 大语言模型相关
+*.bin
+*.safetensors
+model_cache/
+huggingface_cache/
+
+# RAG配置文件(包含API密钥)
+rag_config.json
+api_keys.json
+.env.rag
+
+# RAG测试和调试文件
+rag_test_*.py
+rag_debug_*.py
+qa_test_*.py
+embedding_test_*.py
 .AppleDouble
 .LSOverride
 Icon?
