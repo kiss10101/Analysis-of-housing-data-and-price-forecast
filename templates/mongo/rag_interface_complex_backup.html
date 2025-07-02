@@ -99,27 +99,168 @@
         }
     </style>
 </head>
-<body>
-    <div class="container-fluid">
-        <!-- 导航栏 -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="{% url 'mongo_index' %}">房源数据分析与智能问答系统</a>
-                <div class="navbar-nav ms-auto">
-                    <span class="navbar-text me-3">
-                        欢迎，{{ request.session.mongo_username.username }}
-                    </span>
-                    <a class="nav-link" href="{% url 'mongo_index' %}">返回主页</a>
-                </div>
-            </div>
-        </nav>
+<body class="page-body page-left-in" data-url="http://neon.dev">
 
-        <div class="row mt-4">
+<!-- 数据库类型指示器 -->
+<div class="database-indicator">
+    🍃 MongoDB版本
+</div>
+
+<div class="page-container">
+    <div class="sidebar-menu">
+        <header class="logo-env">
+            <div class="logo" style="text-align:center">
+                <a href="/mongo/index/">
+                    <h3 style="color: #fff;font-weight: bold;margin-top: 5px;">
+                        房源数据分析与智能问答系统
+                        <span class="mongodb-badge">MongoDB</span>
+                    </h3>
+                </a>
+            </div>
+        </header>
+
+        <div class="sidebar-user-info">
+            <div class="sui-normal">
+                <a href="#" class="user-link">
+                    <img style="width:95%" src="/media/{{ request.session.mongo_username.avatar|default:'user/avatar/default.png' }}" class="img-circle">
+                    <span style="text-align:center;padding-top:209px">欢迎回来</span>
+                    <strong style="text-align:center;margin-top:5px">{{ request.session.mongo_username.username }}</strong>
+                </a>
+            </div>
+        </div>
+
+        <ul id="main-menu" class="">
+            <li>
+                <a href="/mongo/index/">
+                    <i class="entypo-gauge"></i>
+                    <span>首页</span>
+                </a>
+            </li>
+            <li>
+                <a href="/mongo/selfInfo/">
+                    <i class="entypo-user"></i>
+                    <span>个人中心</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="entypo-layout"></i>
+                    <span>数据统计</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/mongo/tableData">
+                            <i class="icon-tasks"></i>
+                            <span>数据总览</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/historyTableData/">
+                            <i class="icon-star"></i>
+                            <span>房源收藏</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="entypo-chart-bar"></i>
+                    <span>可视化图表</span>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/mongo/houseDistribute/">
+                            <i class="entypo-light-down"></i>
+                            <span>房源分布</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/typeincity/">
+                            <i class="entypo-feather"></i>
+                            <span>户型占比</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/housewordcloud">
+                            <i class="entypo-lamp"></i>
+                            <span>词云汇总</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/housetyperank/">
+                            <i class="entypo-graduation-cap"></i>
+                            <span>类型级别</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/servicemoney/">
+                            <i class="entypo-network"></i>
+                            <span>价钱影响</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mongo/heatmap-analysis/">
+                            <i class="entypo-chart-pie"></i>
+                            <span>价格影响因素分析</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="/mongo/predict-all-prices/">
+                    <i class="icon-bar-chart"></i>
+                    <span>房价预测</span>
+                </a>
+            </li>
+            <li class="opened active">
+                <a href="/mongo/rag/" style="color: #28a745;">
+                    <i class="entypo-chat"></i>
+                    <span>智能问答 <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">NEW</span></span>
+                </a>
+            </li>
+            <li>
+                <a href="/app/login/" style="color: #ff9800;">
+                    <i class="entypo-database"></i>
+                    <span>切换到MySQL版</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+
+        <div class="row">
+            <div style="display:flex;" class="col-md-12 hidden-xs">
+                <ul style="margin-left:auto" class="list-inline links-list pull-right">
+                    <li class="sep"></li>
+                    <li>
+                        <a href="/mongo/logOut">
+                            退出登录 <i class="entypo-logout right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <hr style="margin-top:0">
+
+        <div class="row">
             <div class="col-md-12">
-                <h2><i class="fas fa-robot"></i> 智能问答系统</h2>
-                <p class="text-muted">基于房源数据的智能问答，支持自然语言查询</p>
-                
-                <!-- 系统状态 -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            <i class="entypo-chat"></i> 智能问答系统
+                            <span class="mongodb-badge">RAG技术</span>
+                        </div>
+                        <div class="panel-options">
+                            <a href="#" data-rel="collapse"><i class="entypo-down-open"></i></a>
+                            <a href="#" data-rel="reload"><i class="entypo-arrows-ccw"></i></a>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <p class="text-muted">基于房源数据的智能问答，支持自然语言查询</p>
+
+                        <!-- 系统状态 -->
                 <div id="systemStatus" class="system-status">
                     {% if system_initialized %}
                         <div class="status-ready">
@@ -218,12 +359,56 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Bootstrap JS -->
-    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    <!-- Font Awesome -->
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+        <footer class="main">
+            Copyright &copy; 2025. 房源数据分析与智能问答系统 <a target="_blank" href="https://hz.lianjia.com/">链家网</a>
+        </footer>
+    </div>
+</div>
+
+<script src="/static/js/jquery-ui-1.10.3.minimal.min.js"></script>
+<script src="/static/js/bootstrap.js"></script>
+<script src="/static/js/neon-api.js"></script>
+
+<!-- 简化的Neon主题初始化，避免错误 -->
+<script>
+$(document).ready(function() {
+    // 基本的侧边栏功能
+    $('#main-menu li > a').click(function(e) {
+        var $this = $(this);
+        var $parent = $this.parent();
+        var $submenu = $parent.find('ul');
+
+        if ($submenu.length > 0) {
+            e.preventDefault();
+
+            if ($parent.hasClass('opened')) {
+                $parent.removeClass('opened');
+                $submenu.slideUp();
+            } else {
+                $('#main-menu li.opened').removeClass('opened').find('ul').slideUp();
+                $parent.addClass('opened');
+                $submenu.slideDown();
+            }
+        }
+    });
+
+    // 面板折叠功能
+    $('.panel-options a[data-rel="collapse"]').click(function(e) {
+        e.preventDefault();
+        var $panel = $(this).closest('.panel');
+        var $body = $panel.find('.panel-body');
+
+        if ($body.is(':visible')) {
+            $body.slideUp();
+            $(this).find('i').removeClass('entypo-down-open').addClass('entypo-up-open');
+        } else {
+            $body.slideDown();
+            $(this).find('i').removeClass('entypo-up-open').addClass('entypo-down-open');
+        }
+    });
+});
+</script>
     
     <script>
         // 全局变量
@@ -313,17 +498,17 @@
         // 添加消息到聊天容器
         function addMessage(content, type, sources = null) {
             const chatContainer = document.getElementById('chatContainer');
-
+            
             // 如果是第一条消息，清空欢迎信息
             if (chatContainer.children.length === 1 && chatContainer.children[0].classList.contains('text-center')) {
                 chatContainer.innerHTML = '';
             }
-
+            
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-message`;
-
+            
             let messageHTML = `<div>${content}</div>`;
-
+            
             // 如果有来源信息，添加来源
             if (sources && sources.length > 0) {
                 messageHTML += '<div class="sources"><strong>相关房源：</strong>';
@@ -349,10 +534,10 @@
                 });
                 messageHTML += '</div>';
             }
-
+            
             messageDiv.innerHTML = messageHTML;
             chatContainer.appendChild(messageDiv);
-
+            
             // 滚动到底部
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -362,7 +547,7 @@
             const askBtn = document.getElementById('askBtn');
             const askBtnText = document.getElementById('askBtnText');
             const askBtnLoading = document.getElementById('askBtnLoading');
-
+            
             if (loading) {
                 askBtn.disabled = true;
                 askBtnText.style.display = 'none';
@@ -488,7 +673,7 @@
             const statusDiv = document.getElementById('systemStatus');
             statusDiv.innerHTML = `
                 <div class="${ready ? 'status-ready' : 'status-error'}">
-                    <i class="fas fa-${ready ? 'check-circle' : 'exclamation-triangle'}"></i>
+                    <i class="fas fa-${ready ? 'check-circle' : 'exclamation-triangle'}"></i> 
                     ${message}
                     ${!ready ? '<button id="initSystemBtn" class="btn btn-sm btn-primary ms-2" onclick="initializeSystem()">重新初始化</button>' : ''}
                 </div>
@@ -500,7 +685,7 @@
             try {
                 const response = await fetch('{% url "rag_status" %}');
                 const data = await response.json();
-
+                
                 if (data.success) {
                     alert('系统状态：\n' + JSON.stringify(data.stats, null, 2));
                 } else {
@@ -514,7 +699,7 @@
         // 清空缓存
         async function clearCache() {
             if (!confirm('确定要清空缓存吗？')) return;
-
+            
             try {
                 const response = await fetch('{% url "rag_clear_cache" %}', {
                     method: 'POST',
@@ -524,7 +709,7 @@
                 });
 
                 const data = await response.json();
-
+                
                 if (data.success) {
                     alert('缓存已清空');
                 } else {

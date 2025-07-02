@@ -1,4 +1,4 @@
-# 🏠 Python租房房源数据可视化分析系统
+# 🏠 房源数据分析与智能问答系统
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![Django](https://img.shields.io/badge/Django-4.2.16-green.svg)](https://djangoproject.com)
@@ -6,7 +6,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://mysql.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-基于Django框架的房源数据分析系统，支持MySQL和MongoDB双数据库架构，提供完整的数据可视化、分析和预测功能。
+基于Django框架的房源数据分析与智能问答系统，支持MySQL和MongoDB双数据库架构，提供完整的数据可视化、分析、预测和智能问答功能。
 
 ## 🎯 项目特色
 

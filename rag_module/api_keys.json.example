@@ -1,0 +1,4 @@
+{
+    "embedding_api_key": "your-embedding-api-key-here",
+    "llm_api_key": "your-llm-api-key-here"
+}

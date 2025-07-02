@@ -22,23 +22,69 @@ DOCUMENTS_DIR.mkdir(exist_ok=True)
 VECTOR_DB_DIR.mkdir(exist_ok=True)
 FAISS_INDEX_DIR.mkdir(exist_ok=True)
 
+# API密钥安全配置
+def load_api_config():
+    """
+    安全加载API配置，支持多种方式：
+    1. 环境变量（推荐）
+    2. 配置文件
+    3. 默认值（仅用于开发测试）
+    """
+    import json
+
+    # 配置文件路径
+    config_file = BASE_DIR / "api_keys.json"
+
+    # 默认配置（仅用于开发测试，生产环境请使用环境变量）
+    default_config = {
+        "embedding_api_key": "your-embedding-api-key-here",
+        "llm_api_key": "your-llm-api-key-here"
+    }
+
+    # 1. 优先从环境变量读取
+    embedding_api_key = os.getenv('RAG_EMBEDDING_API_KEY')
+    llm_api_key = os.getenv('RAG_LLM_API_KEY')
+
+    # 2. 如果环境变量不存在，尝试从配置文件读取
+    if not embedding_api_key or not llm_api_key:
+        if config_file.exists():
+            try:
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    file_config = json.load(f)
+                    embedding_api_key = embedding_api_key or file_config.get('embedding_api_key')
+                    llm_api_key = llm_api_key or file_config.get('llm_api_key')
+            except Exception as e:
+                print(f"读取配置文件失败: {e}")
+
+    # 3. 最后使用默认值（开发测试用）
+    embedding_api_key = embedding_api_key or default_config['embedding_api_key']
+    llm_api_key = llm_api_key or default_config['llm_api_key']
+
+    return {
+        "embedding_api_key": embedding_api_key,
+        "llm_api_key": llm_api_key
+    }
+
+# 加载API密钥
+api_keys = load_api_config()
+
 # 火山方舟API配置
 VOLCANO_CONFIG = {
     # Embedding模型配置
-    "embedding_api_key": "b380f961-5cea-4c1b-95e2-8e909befbff5",
-    "embedding_model": "doubao-embedding-text-240715",
-    "embedding_base_url": "https://ark.cn-beijing.volces.com/api/v3",
+    "embedding_api_key": api_keys["embedding_api_key"],
+    "embedding_model": os.getenv('RAG_EMBEDDING_MODEL', "doubao-embedding-text-240715"),
+    "embedding_base_url": os.getenv('RAG_EMBEDDING_BASE_URL', "https://ark.cn-beijing.volces.com/api/v3"),
 
     # LLM模型配置
-    "llm_api_key": "3c797b67-7ee3-45da-ab41-7dd6971155ae",
-    "llm_model": "doubao-1-5-pro-256k-250115",
-    "llm_base_url": "https://ark.cn-beijing.volces.com/api/v3",
+    "llm_api_key": api_keys["llm_api_key"],
+    "llm_model": os.getenv('RAG_LLM_MODEL', "doubao-1-5-pro-256k-250115"),
+    "llm_base_url": os.getenv('RAG_LLM_BASE_URL', "https://ark.cn-beijing.volces.com/api/v3"),
 
     # 通用配置
-    "max_tokens": 1500,
-    "temperature": 0.3,  # 降低随机性，提高准确性
-    "top_p": 0.8,        # 核采样参数
-    "timeout": 30
+    "max_tokens": int(os.getenv('RAG_MAX_TOKENS', '1500')),
+    "temperature": float(os.getenv('RAG_TEMPERATURE', '0.3')),  # 降低随机性，提高准确性
+    "top_p": float(os.getenv('RAG_TOP_P', '0.8')),        # 核采样参数
+    "timeout": int(os.getenv('RAG_TIMEOUT', '30'))
 }
 
 # FAISS配置
