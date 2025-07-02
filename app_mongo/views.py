@@ -1038,50 +1038,10 @@ def mongo_house_wordcloud(request):
     useravatar = request.session['mongo_username'].get('avatar')
     fallback_mode = request.session.get('fallback_mode', False)
 
-    if fallback_mode:
-        # 降级模式：使用模拟词云数据
-        wordcloud_data = [
-            {'name': '精装修', 'value': 15},
-            {'name': '地铁', 'value': 12},
-            {'name': '交通便利', 'value': 10},
-            {'name': '家电齐全', 'value': 8},
-            {'name': '采光好', 'value': 7},
-            {'name': '安静', 'value': 6},
-            {'name': '近商圈', 'value': 5},
-            {'name': '拎包入住', 'value': 4}
-        ]
-    else:
-        try:
-            # 正常模式：使用MongoDB数据
-            pipeline = [
-                {'$unwind': '$tags'},
-                {'$group': {'_id': '$tags', 'count': {'$sum': 1}}},
-                {'$sort': {'count': -1}},
-                {'$limit': 100}
-            ]
-
-            tag_data = list(HouseDocument.objects.aggregate(pipeline))
-
-            # 格式化为词云数据
-            wordcloud_data = []
-            for item in tag_data:
-                if item['_id'] and item['_id'].strip():
-                    wordcloud_data.append({
-                        'name': item['_id'],
-                        'value': item['count']
-                    })
-        except:
-            # MongoDB查询失败，使用降级数据
-            wordcloud_data = [
-                {'name': '精装修', 'value': 15},
-                {'name': '地铁', 'value': 12},
-                {'name': '交通便利', 'value': 10}
-            ]
-
+    # 简化版本：直接展示静态词云图片，不进行数据处理
     context = {
         'username': username,
         'useravatar': useravatar,
-        'wordcloud_data': json.dumps(wordcloud_data),
         'database_type': 'MongoDB (演示模式)' if fallback_mode else 'MongoDB',
         'fallback_mode': fallback_mode
     }

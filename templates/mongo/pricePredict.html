@@ -209,10 +209,7 @@
     var myChart = echarts.init(chartDom);
     var option;
 option = {
-  title: {
-    text: '不同房源类型在各城市的价格预测',
-    left: 'center'
-  },
+  // 移除图表标题，避免与面板标题重叠
   tooltip: {
     trigger: 'axis',
     axisPointer: {
@@ -229,6 +226,7 @@ option = {
     left: '3%',
     right: '4%',
     bottom: '3%',
+    top: '10%',  // 增加顶部边距，避免与面板标题重叠
     containLabel: true
   },
   xAxis: {

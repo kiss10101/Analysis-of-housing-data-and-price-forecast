@@ -328,13 +328,25 @@
             if (sources && sources.length > 0) {
                 messageHTML += '<div class="sources"><strong>相关房源：</strong>';
                 sources.slice(0, 3).forEach((source, index) => {
-                    // 获取价格信息，优先使用monthly_rent
-                    const price = source.monthly_rent || source.price || 0;
-                    const priceText = price > 0 ? price : '价格面议';
+                    // 获取价格信息，优先使用monthly_rent，然后是price
+                    let price = 0;
+                    let priceText = '价格面议';
+
+                    if (source.monthly_rent && source.monthly_rent > 0) {
+                        price = source.monthly_rent;
+                        priceText = price + '元/月';
+                    } else if (source.price && source.price > 0) {
+                        price = source.price;
+                        priceText = price + '元/月';
+                    } else if (typeof source.monthly_rent === 'string' && source.monthly_rent.includes('元')) {
+                        priceText = source.monthly_rent;
+                    } else if (typeof source.price === 'string' && source.price.includes('元')) {
+                        priceText = source.price;
+                    }
 
                     // 获取位置信息
                     const location = [source.city, source.district, source.street]
-                        .filter(item => item && item !== '未知' && item !== '')
+                        .filter(item => item && item !== '未知' && item !== '' && item !== null)
                         .join(' ');
 
                     messageHTML += `
@@ -342,7 +354,7 @@
                             <strong>${source.title || '房源' + (index + 1)}</strong> -
                             ${source.room_type || '户型未知'} -
                             ${location || '位置未知'} -
-                            ${priceText}元/月 -
+                            ${priceText} -
                             ${source.area || 0}平米
                         </div>
                     `;
